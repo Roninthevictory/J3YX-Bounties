@@ -562,11 +562,11 @@
                 <p class="text-gray-300 mb-1">Reason: ${bounty.reason}</p>
                 <p class="text-gray-300 mb-3">Payment: ${bounty.paymentMethod}</p>
                 <p class="text-xs text-gray-300">
-                    Created by: ${bounty.createdByEmail || bounty.createdByDiscordId || bounty.createdByUid} on ${new Date(bounty.createdAt).toLocaleString()}
+                    Created by: ${bounty.createdByDiscordId || bounty.createdByEmail || bounty.createdByUid} on ${new Date(bounty.createdAt).toLocaleString()}
                 </p>
                 ${bounty.status === 'claimed' && bounty.claimedByEmail ? `
                     <p class="text-xs text-gray-300 mt-1">
-                        Claimed by: ${bounty.claimedByEmail || bounty.claimedByDiscordId || bounty.claimedByUid} on ${new Date(bounty.claimedAt).toLocaleString()}
+                        Claimed by: ${bounty.claimedByDiscordId || bounty.claimedByEmail || bounty.claimedByUid} on ${new Date(bounty.claimedAt).toLocaleString()}
                     </p>
                 ` : ''}
                 ${bounty.status === 'disabled' && bounty.disabledReason ? `
@@ -911,12 +911,11 @@
                 document.getElementById('reason').value = '';
                 document.getElementById('paymentMethod').value = 'In-game Items';
 
-                // Send Discord webhook alert
-                if (PRESET_DISCORD_WEBHOOK_URL && PRESET_DISCORD_WEBHOOK_URL !== "https://discord.com/api/webhooks/1392503480412803152/JQoXoY7rT9FiTc5dIisfCtofWASmvblItwgxcFf5pQMpAS6KU7AdG5Vh8rO51xeZS3kg") {
-                    await sendDiscordWebhookAlert(newBounty);
+                // Send Discord webhook alert for new bounty
+                if (PRESET_DISCORD_WEBHOOK_URL) {
+                    await sendDiscordNewBountyAlert(newBounty);
                 } else {
-                    console.warn("Preset Discord Webhook URL is not configured. Skipping alert.");
-                    // showMessage("Warning: Preset Discord Webhook URL is not configured. Alerts will not be sent.", "error");
+                    console.warn("Preset Discord Webhook URL is not configured. Skipping new bounty alert.");
                 }
             } catch (error) {
                 console.error("Error adding bounty:", error);
@@ -924,10 +923,10 @@
             }
         }
 
-        // Send Discord Webhook Alert
-        async function sendDiscordWebhookAlert(bounty) {
+        // Send Discord Webhook Alert for NEW BOUNTY
+        async function sendDiscordNewBountyAlert(bounty) {
             const webhookPayload = {
-                content: `🚨 **NEW BOUNTY ALERT!** 🚨`,
+                content: `🚨 **NEW BOUNTY ALERT!** �`,
                 embeds: [
                     {
                         title: `Bounty on ${bounty.targetPlayer}`,
@@ -936,7 +935,7 @@
                         fields: [
                             {
                                 name: "Created By",
-                                value: bounty.createdByEmail + (bounty.createdByDiscordId && bounty.createdByDiscordId !== 'N/A' ? ` (Discord ID: ${bounty.createdByDiscordId})` : ''),
+                                value: (bounty.createdByDiscordId && bounty.createdByDiscordId !== 'N/A' ? `Discord ID: ${bounty.createdByDiscordId}` : bounty.createdByEmail || bounty.createdByUid),
                                 inline: true
                             },
                             {
@@ -964,14 +963,70 @@
 
                 if (!response.ok) {
                     const errorText = await response.text();
-                    console.error("Discord webhook failed:", response.status, errorText);
-                    showMessage(`Failed to send Discord alert: ${response.status} - ${errorText}`, "error");
+                    console.error("Discord webhook (new bounty) failed:", response.status, errorText);
+                    showMessage(`Failed to send Discord alert for new bounty: ${response.status} - ${errorText}`, "error");
                 } else {
-                    console.log("Discord webhook alert sent successfully!");
+                    console.log("Discord webhook alert (new bounty) sent successfully!");
                 }
             } catch (error) {
-                console.error("Error sending Discord webhook:", error);
-                showMessage(`Error sending Discord alert: ${error.message}`, "error");
+                console.error("Error sending Discord webhook (new bounty):", error);
+                showMessage(`Error sending Discord alert for new bounty: ${error.message}`, "error");
+            }
+        }
+
+        // Send Discord Webhook Alert for CLAIMED BOUNTY
+        async function sendDiscordClaimedAlert(bounty) {
+            const webhookPayload = {
+                content: `✅ **BOUNTY CLAIMED!** ✅`,
+                embeds: [
+                    {
+                        title: `Bounty on ${bounty.targetPlayer} has been claimed!`,
+                        description: `**Amount:** ${bounty.amount}\n**Reason:** ${bounty.reason}\n**Payment Method:** ${bounty.paymentMethod}`,
+                        color: 65280, // Green color
+                        fields: [
+                            {
+                                name: "Created By",
+                                value: (bounty.createdByDiscordId && bounty.createdByDiscordId !== 'N/A' ? `Discord ID: ${bounty.createdByDiscordId}` : bounty.createdByEmail || bounty.createdByUid),
+                                inline: true
+                            },
+                            {
+                                name: "Claimed By",
+                                value: (bounty.claimedByDiscordId && bounty.claimedByDiscordId !== 'N/A' ? `Discord ID: ${bounty.claimedByDiscordId}` : bounty.claimedByEmail || bounty.claimedByUid),
+                                inline: true
+                            },
+                            {
+                                name: "Status",
+                                value: bounty.status,
+                                inline: true
+                            }
+                        ],
+                        timestamp: new Date().toISOString(),
+                        footer: {
+                            text: "Johnny3x Rust Bounty System"
+                        }
+                    }
+                ]
+            };
+
+            try {
+                const response = await fetch(PRESET_DISCORD_WEBHOOK_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(webhookPayload),
+                });
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error("Discord webhook (claimed bounty) failed:", response.status, errorText);
+                    showMessage(`Failed to send Discord alert for claimed bounty: ${response.status} - ${errorText}`, "error");
+                } else {
+                    console.log("Discord webhook alert (claimed bounty) sent successfully!");
+                }
+            } catch (error) {
+                console.error("Error sending Discord webhook (claimed bounty):", error);
+                showMessage(`Error sending Discord alert for claimed bounty: ${error.message}`, "error");
             }
         }
 
@@ -989,6 +1044,10 @@
 
             try {
                 const bountyRef = ref(db, `artifacts/${appId}/public/data/bounties/${bountyId}`);
+                // Fetch the current bounty data to send a comprehensive webhook message
+                const snapshot = await get(bountyRef);
+                const currentBounty = snapshot.val();
+
                 await update(bountyRef, {
                     status: 'claimed',
                     claimedByUid: firebaseUid,
@@ -997,6 +1056,24 @@
                     claimedAt: new Date().toISOString(),
                 });
                 showMessage("Bounty claimed successfully!", "success");
+
+                // Send Discord webhook alert for claimed bounty
+                if (PRESET_DISCORD_WEBHOOK_URL) {
+                    // Create a bounty object with updated claimed details for the webhook
+                    const claimedBountyForWebhook = {
+                        ...currentBounty, // Include original bounty details
+                        id: bountyId,
+                        status: 'claimed',
+                        claimedByUid: firebaseUid,
+                        claimedByEmail: auth.currentUser?.email || 'N/A',
+                        claimedByDiscordId: userDiscordId || 'N/A',
+                        claimedAt: new Date().toISOString(),
+                    };
+                    await sendDiscordClaimedAlert(claimedBountyForWebhook);
+                } else {
+                    console.warn("Preset Discord Webhook URL is not configured. Skipping claimed bounty alert.");
+                }
+
             } catch (error) {
                 console.error("Error claiming bounty:", error);
                 showMessage(`Failed to claim bounty: ${error.message}`, "error");
