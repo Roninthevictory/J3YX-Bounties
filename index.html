@@ -209,7 +209,7 @@
                         Your Discord ID (numeric):
                         <span class="text-xs text-gray-400 block mt-1">Find this using `/id` in the Discord server or in Discord settings (Developer Mode).</span>
                     </label>
-                    <input type="text" id="authDiscordId" placeholder="e.g., 123456789012345678"
+                    <input type="text" id="authDiscordId" name="authDiscordId" placeholder="e.g., 123456789012345678"
                         class="w-full p-3 rounded-lg bg-gray-950 border border-red-700 text-white placeholder-red-200 focus:ring-2 focus:ring-red-600"
                         required />
                 </div>
@@ -454,6 +454,7 @@
         let bountyToDeleteId = null;
         let bountyToDisableId = null;
         let currentBountyToClaim = null; // New global variable to store bounty being claimed
+        let isRegisterMode = false; // Define isRegisterMode globally
 
 
         // --- Utility Functions ---
@@ -528,7 +529,14 @@
                     </button>
                 `;
                 authenticatedSections.classList.add('hidden');
-                document.getElementById('login-register-btn')?.addEventListener('click', handleLoginRegisterModal);
+                // Re-attach the event listener here as the element might be recreated
+                const loginRegisterBtn = document.getElementById('login-register-btn');
+                if (loginRegisterBtn) {
+                    loginRegisterBtn.addEventListener('click', handleLoginRegisterModal);
+                    console.log("Re-attached login-register-btn event listener in updateAuthStatus.");
+                } else {
+                    console.warn("login-register-btn not found in updateAuthStatus for re-attaching listener.");
+                }
             }
         }
 
@@ -686,6 +694,7 @@
 
         // Firebase Auth Listener
         document.addEventListener('DOMContentLoaded', () => { // Ensure DOM is loaded before setting up listener
+            console.log("DOM Content Loaded. Initializing Firebase Auth listener."); // Added log
             onAuthStateChanged(auth, async (user) => {
                 console.log("onAuthStateChanged triggered. User object:", user); // Added log
                 if (user) {
@@ -709,6 +718,7 @@
                         } else {
                             userDiscordId = ''; // Clear if not found
                             isAdmin = false; // Ensure isAdmin is false if profile or Discord ID is missing
+                            console.warn("User profile or Discord ID not found for authenticated user:", firebaseUid); // Added log
                         }
                     } catch (error) {
                         console.error("Error fetching user Discord ID/isAdmin:", error);
@@ -741,75 +751,100 @@
             const authPasswordInput = document.getElementById('authPassword'); // Get password input
             const authDiscordIdInput = document.getElementById('authDiscordId'); // Get Discord ID input
 
-            if (isRegisterMode) {
-                title.textContent = 'Register';
-                confirmButton.textContent = 'Register';
-                toggleRegisterBtn.classList.add('hidden');
-                toggleLoginBtn.classList.remove('hidden');
-                discordIdField.classList.remove('hidden'); // Discord ID required for registration
-                authEmailInput.value = ''; // Clear fields
-                authPasswordInput.value = '';
-                authDiscordIdInput.value = '';
-                document.getElementById('auth-error-message').classList.add('hidden');
+            console.log("Toggling auth mode. isRegisterMode will be:", isRegisterMode); // Added log
+
+            if (title && confirmButton && toggleRegisterBtn && toggleLoginBtn && discordIdField && authEmailInput && authPasswordInput && authDiscordIdInput) {
+                if (isRegisterMode) {
+                    title.textContent = 'Register';
+                    confirmButton.textContent = 'Register';
+                    toggleRegisterBtn.classList.add('hidden');
+                    toggleLoginBtn.classList.remove('hidden');
+                    discordIdField.classList.remove('hidden'); // Discord ID required for registration
+                    authEmailInput.value = ''; // Clear fields
+                    authPasswordInput.value = '';
+                    authDiscordIdInput.value = '';
+                    document.getElementById('auth-error-message')?.classList.add('hidden');
+                } else {
+                    title.textContent = 'Login';
+                    confirmButton.textContent = 'Login';
+                    toggleRegisterBtn.classList.remove('hidden');
+                    toggleLoginBtn.classList.add('hidden');
+                    discordIdField.classList.add('hidden'); // Discord ID not required for direct login
+                    authEmailInput.value = ''; // Clear fields
+                    authPasswordInput.value = '';
+                    authDiscordIdInput.value = ''; // Clear Discord ID field even if hidden
+                    document.getElementById('auth-error-message')?.classList.add('hidden');
+                }
             } else {
-                title.textContent = 'Login';
-                confirmButton.textContent = 'Login';
-                toggleRegisterBtn.classList.remove('hidden');
-                toggleLoginBtn.classList.add('hidden');
-                discordIdField.classList.add('hidden'); // Discord ID not required for direct login
-                authEmailInput.value = ''; // Clear fields
-                authPasswordInput.value = '';
-                authDiscordIdInput.value = ''; // Clear Discord ID field even if hidden
-                document.getElementById('auth-error-message').classList.add('hidden');
+                console.error("One or more elements for auth modal not found in toggleAuthMode.");
             }
         }
 
         // Show the login/register modal
         function handleLoginRegisterModal() {
+            console.log("handleLoginRegisterModal called."); // Added log
             isRegisterMode = false; // Default to login mode
             toggleAuthMode(); // Set initial state and clear fields
             showModal('login-register-modal');
+            console.log("Modal display state:", document.getElementById('login-register-modal')?.classList.contains('hidden') ? 'hidden' : 'visible'); // Added log
         }
 
         // Handle Email/Password Login or Register submission
         async function handleEmailPasswordAuth(e) {
-            e.preventDefault();
-            const email = document.getElementById('authEmail').value.trim();
-            const password = document.getElementById('authPassword').value.trim();
-            const discordId = document.getElementById('authDiscordId').value.trim();
+            console.log("handleEmailPasswordAuth function entered."); // Added log at the very beginning
+            console.trace("Call stack for handleEmailPasswordAuth:"); // Added trace for detailed debugging
+            e.preventDefault(); // Prevent default form submission
+
+            const email = document.getElementById('authEmail')?.value.trim();
+            const password = document.getElementById('authPassword')?.value.trim();
+            const discordId = document.getElementById('authDiscordId')?.value.trim();
             const errorMessageElement = document.getElementById('auth-error-message');
-            errorMessageElement.classList.add('hidden'); // Hide previous errors
+            
+            if (errorMessageElement) {
+                errorMessageElement.classList.add('hidden'); // Hide previous errors
+            } else {
+                console.error("Error: auth-error-message element not found.");
+            }
+
 
             console.log("Attempting authentication..."); // Added log
             console.log("Email:", email);
-            console.log("Password length:", password.length > 0 ? '****' : 'empty'); // Don't log actual password
+            console.log("Password length:", password?.length > 0 ? '****' : 'empty'); // Don't log actual password
             console.log("Discord ID (if applicable):", discordId);
             console.log("Is Register Mode:", isRegisterMode);
 
 
             if (!email || !password) {
-                errorMessageElement.textContent = "Email and password cannot be empty.";
-                errorMessageElement.classList.remove('hidden');
+                if (errorMessageElement) {
+                    errorMessageElement.textContent = "Email and password cannot be empty.";
+                    errorMessageElement.classList.remove('hidden');
+                }
                 console.error("Authentication failed: Email or password empty."); // Added log
                 return;
             }
 
             if (isRegisterMode) {
                 if (!discordId) {
-                    errorMessageElement.textContent = "Discord ID is required for registration.";
-                    errorMessageElement.classList.remove('hidden');
+                    if (errorMessageElement) {
+                        errorMessageElement.textContent = "Discord ID is required for registration.";
+                        errorMessageElement.classList.remove('hidden');
+                    }
                     console.error("Registration failed: Discord ID empty."); // Added log
                     return;
                 }
                 if (!/^\d+$/.test(discordId)) { // Basic numeric Discord ID validation
-                    errorMessageElement.textContent = "Discord ID must be numeric.";
-                    errorMessageElement.classList.remove('hidden');
+                    if (errorMessageElement) {
+                        errorMessageElement.textContent = "Discord ID must be numeric.";
+                        errorMessageElement.classList.remove('hidden');
+                    }
                     console.error("Registration failed: Discord ID not numeric."); // Added log
                     return;
                 }
                 if (password.length < 6) {
-                    errorMessageElement.textContent = "Password must be at least 6 characters long.";
-                    errorMessageElement.classList.remove('hidden');
+                    if (errorMessageElement) {
+                        errorMessageElement.textContent = "Password must be at least 6 characters long.";
+                        errorMessageElement.classList.remove('hidden');
+                    }
                     console.error("Registration failed: Password too short."); // Added log
                     return;
                 }
@@ -819,15 +854,19 @@
                     const discordIdToUidRef = ref(db, `artifacts/${appId}/discordIdToUid/${discordId}`);
                     const snapshot = await get(discordIdToUidRef);
                     if (snapshot.exists()) {
-                        errorMessageElement.textContent = "This Discord ID is already registered. Please login or use a different Discord ID.";
-                        errorMessageElement.classList.remove('hidden');
+                        if (errorMessageElement) {
+                            errorMessageElement.textContent = "This Discord ID is already registered. Please login or use a different Discord ID.";
+                            errorMessageElement.classList.remove('hidden');
+                        }
                         console.error("Registration failed: Discord ID already registered."); // Added log
                         return;
                     }
                 } catch (dbError) {
                     console.error("Error checking Discord ID existence in DB:", dbError); // Added log
-                    errorMessageElement.textContent = `Error during registration check: ${dbError.message}`;
-                    errorMessageElement.classList.remove('hidden');
+                    if (errorMessageElement) {
+                        errorMessageElement.textContent = `Error during registration check: ${dbError.message}`;
+                        errorMessageElement.classList.remove('hidden');
+                    }
                     return;
                 }
 
@@ -858,8 +897,10 @@
                     } else {
                         displayMessage = `Registration failed: ${error.message}`; // Display specific Firebase error
                     }
-                    errorMessageElement.textContent = displayMessage;
-                    errorMessageElement.classList.remove('hidden');
+                    if (errorMessageElement) {
+                        errorMessageElement.textContent = displayMessage;
+                        errorMessageElement.classList.remove('hidden');
+                    }
                 }
             } else {
                 // Login existing user
@@ -890,8 +931,10 @@
                     } else {
                         displayMessage = `Login failed: ${error.message}`; // Display specific Firebase error
                     }
-                    errorMessageElement.textContent = displayMessage;
-                    errorMessageElement.classList.remove('hidden');
+                    if (errorMessageElement) {
+                        errorMessageElement.textContent = displayMessage;
+                        errorMessageElement.classList.remove('hidden');
+                    }
                 }
             }
         }
@@ -904,6 +947,7 @@
                 showMessage("Logged out successfully!", "success");
                 console.log("Logout successful."); // Added log
                 // onAuthStateChanged listener will handle updating UI
+                // The updateAuthStatus function will now handle re-attaching the listener.
             } catch (error) {
                 console.error("Error logging out:", error); // Added log
                 showMessage(`Logout failed: ${error.message}`, "error");
@@ -918,8 +962,8 @@
         }
 
         function handleAdminLoginAttempt() {
-            const username = document.getElementById('adminUsernameInput').value;
-            const password = document.getElementById('adminPasswordInput').value;
+            const username = document.getElementById('adminUsernameInput')?.value;
+            const password = document.getElementById('adminPasswordInput')?.value;
 
             if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
                 isAdmin = true;
@@ -970,10 +1014,10 @@
                 return;
             }
 
-            const targetPlayer = document.getElementById('targetPlayer').value.trim();
-            const amount = parseFloat(document.getElementById('amount').value);
-            const reason = document.getElementById('reason').value.trim();
-            const paymentMethod = document.getElementById('paymentMethod').value;
+            const targetPlayer = document.getElementById('targetPlayer')?.value.trim();
+            const amount = parseFloat(document.getElementById('amount')?.value);
+            const reason = document.getElementById('reason')?.value.trim();
+            const paymentMethod = document.getElementById('paymentMethod')?.value;
 
             if (!targetPlayer || !amount || !reason) {
                 showMessage("All fields are required to add a bounty.", "error");
@@ -1174,9 +1218,9 @@
                 return;
             }
 
-            const proofImage1File = document.getElementById('proofImage1').files[0];
-            const proofImage2File = document.getElementById('proofImage2').files[0];
-            const claimNotes = document.getElementById('claimNotes').value.trim();
+            const proofImage1File = document.getElementById('proofImage1')?.files[0];
+            const proofImage2File = document.getElementById('proofImage2')?.files[0];
+            const claimNotes = document.getElementById('claimNotes')?.value.trim();
 
             if (!proofImage1File || !proofImage2File) {
                 showMessage("Both proof images are required to claim the bounty.", "error");
@@ -1243,6 +1287,10 @@
 
         // Handle Edit Bounty
         function handleEditClick(bounty) {
+            if (!firebaseUid) { // User must be authenticated
+                showMessage("Please log in first.", "error");
+                return;
+            }
             if (firebaseUid !== bounty.createdByUid) {
                 showMessage("You can only edit bounties that you have created.", "error");
                 return;
@@ -1268,11 +1316,11 @@
                 return;
             }
 
-            const editedBountyId = document.getElementById('editBountyId').value;
-            const editedTargetPlayer = document.getElementById('editTargetPlayer').value.trim();
-            const editedAmount = parseFloat(document.getElementById('editAmount').value);
-            const editedReason = document.getElementById('editReason').value.trim();
-            const editedPaymentMethod = document.getElementById('editPaymentMethod').value;
+            const editedBountyId = document.getElementById('editBountyId')?.value;
+            const editedTargetPlayer = document.getElementById('editTargetPlayer')?.value.trim();
+            const editedAmount = parseFloat(document.getElementById('editAmount')?.value);
+            const editedReason = document.getElementById('editReason')?.value.trim();
+            const editedPaymentMethod = document.getElementById('editPaymentMethod')?.value;
 
             if (!editedTargetPlayer || !editedAmount || !editedReason) {
                 showMessage("All fields are required to edit a bounty.", "error");
@@ -1363,7 +1411,7 @@
                 showMessage("Error: Not authorized or bounty not selected for disablement.", "error");
                 return;
             }
-            const disableReason = document.getElementById('disableReasonInput').value.trim();
+            const disableReason = document.getElementById('disableReasonInput')?.value.trim();
             if (!disableReason) {
                 showMessage("Please provide a reason for disabling the bounty.", "error");
                 return;
@@ -1411,10 +1459,25 @@
                 document.getElementById('active-bounties-tab')?.classList.replace('text-white', 'text-gray-300');
             });
 
-            // Login/Register Modal
-            document.getElementById('login-register-btn')?.addEventListener('click', handleLoginRegisterModal);
+            // Login/Register Modal - Initial attachment
+            const loginRegisterBtn = document.getElementById('login-register-btn');
+            if (loginRegisterBtn) {
+                loginRegisterBtn.addEventListener('click', handleLoginRegisterModal);
+                console.log("Attached event listener to login-register-btn on DOMContentLoaded."); // Added log
+            } else {
+                console.error("ERROR: login-register-btn not found on DOMContentLoaded!"); // Added error log
+            }
+
+            // Attach submit listener to the form
+            const emailPasswordForm = document.getElementById('email-password-form');
+            if (emailPasswordForm) {
+                emailPasswordForm.addEventListener('submit', handleEmailPasswordAuth);
+                console.log("Attached submit event listener to email-password-form on DOMContentLoaded."); // Added log
+            } else {
+                console.error("ERROR: email-password-form not found on DOMContentLoaded!"); // Added error log
+            }
+
             document.getElementById('cancel-auth-btn')?.addEventListener('click', () => hideModal('login-register-modal'));
-            document.getElementById('email-password-form')?.addEventListener('submit', handleEmailPasswordAuth);
             document.getElementById('toggle-register-btn')?.addEventListener('click', toggleAuthMode);
             document.getElementById('toggle-login-btn')?.addEventListener('click', toggleAuthMode);
 
