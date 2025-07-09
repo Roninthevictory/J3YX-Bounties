@@ -355,6 +355,53 @@
         </div>
     </div>
 
+    <!-- New Claim Bounty Modal -->
+    <div id="claim-bounty-modal" class="modal-backdrop hidden">
+        <div class="modal-content">
+            <h3 class="text-2xl font-bold text-red-400 mb-4 text-center">Claim Bounty</h3>
+            <p class="text-gray-300 mb-4 text-center">
+                To claim this bounty, please provide two image proofs and any relevant notes.
+            </p>
+            <form id="claim-bounty-form">
+                <input type="hidden" id="claimBountyId" />
+                <div class="mb-4">
+                    <label for="proofImage1" class="block text-gray-300 text-sm font-bold mb-2">
+                        Proof Image 1 (Target Elimination):
+                    </label>
+                    <input type="file" id="proofImage1" accept="image/*"
+                        class="w-full p-3 rounded-lg bg-gray-950 border border-red-700 text-white placeholder-red-200 focus:ring-2 focus:ring-red-600"
+                        required />
+                </div>
+                <div class="mb-4">
+                    <label for="proofImage2" class="block text-gray-300 text-sm font-bold mb-2">
+                        Proof Image 2 (Reward Transaction):
+                    </label>
+                    <input type="file" id="proofImage2" accept="image/*"
+                        class="w-full p-3 rounded-lg bg-gray-950 border border-red-700 text-white placeholder-red-200 focus:ring-2 focus:ring-red-600"
+                        required />
+                </div>
+                <div class="mb-6">
+                    <label for="claimNotes" class="block text-gray-300 text-sm font-bold mb-2">
+                        Notes (Optional):
+                    </label>
+                    <textarea id="claimNotes" rows="3"
+                        placeholder="Add any additional notes about the claim..."
+                        class="w-full p-3 rounded-lg bg-gray-950 border border-red-700 text-white placeholder-red-200 focus:ring-2 focus:ring-red-600 resize-y"></textarea>
+                </div>
+                <div class="flex justify-end gap-4">
+                    <button type="button" id="cancel-claim-btn"
+                        class="bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg transition duration-300 ease-in-out">
+                        Cancel
+                    </button>
+                    <button type="submit"
+                        class="bg-red-700 hover:bg-red-800 text-white font-bold py-2 px-4 rounded-lg transition duration-300 ease-in-out">
+                        Submit Claim
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getDatabase, ref, push, set, update, remove, onValue, off, get, child } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-database.js";
@@ -362,7 +409,7 @@
 
         // User-provided Firebase Configuration
         const firebaseConfig = {
-            apiKey: "AIzaSyCcAUdGbyBkZuP9i-s7ybHrH-LVJzxQkbU",
+            apiKey: "AIzaSyCcAUdGbyBkZuP9i-s77ybHrH-LVJzxQkbU",
             authDomain: "johnny3x-bounties.firebaseapp.com",
             projectId: "johnny3x-bounties",
             storageBucket: "johnny3x-bounties.firebasestorage.app",
@@ -372,7 +419,8 @@
 
         // Ensure these global variables are available in the Canvas environment
         const appId = typeof __app_id !== 'undefined' ? __app_id : firebaseConfig.projectId;
-        // const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null; // No longer needed for email/password
+        // The initialAuthToken variable is not used in this email/password based HTML app.
+        // const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
         // Define your preset Discord Webhook URL here
         const PRESET_DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1392503480412803152/JQoXoY7rT9FiTc5dIisfCtofWASmvblItwgxcFf5pQMpAS6KU7AdG5Vh8rO51xeZS3kg";
@@ -405,9 +453,7 @@
         let currentBountyToEdit = null;
         let bountyToDeleteId = null;
         let bountyToDisableId = null;
-
-        // Flags for login/register modal
-        let isRegisterMode = false;
+        let currentBountyToClaim = null; // New global variable to store bounty being claimed
 
 
         // --- Utility Functions ---
@@ -551,6 +597,17 @@
             const textColorClass = bounty.status === 'disabled' ? 'text-gray-400' : 'text-red-300';
             const amountTextColorClass = bounty.status === 'disabled' ? 'text-gray-500' : 'text-red-200';
 
+            let proofImagesHtml = '';
+            if (bounty.status === 'claimed' && (bounty.proofImage1 || bounty.proofImage2)) {
+                proofImagesHtml = `
+                    <div class="mt-2 text-xs text-gray-400">
+                        <strong>Proofs:</strong>
+                        ${bounty.proofImage1 ? `<a href="${bounty.proofImage1}" target="_blank" class="text-blue-400 hover:underline ml-1">Target Proof</a>` : ''}
+                        ${bounty.proofImage2 ? `<a href="${bounty.proofImage2}" target="_blank" class="text-blue-400 hover:underline ml-1">Reward Proof</a>` : ''}
+                    </div>
+                `;
+            }
+
             card.innerHTML = `
                 <div class="flex justify-between items-start mb-2">
                     <h3 class="text-xl font-bold ${textColorClass}">${bounty.targetPlayer}</h3>
@@ -564,10 +621,12 @@
                 <p class="text-xs text-gray-300">
                     Created by: ${bounty.createdByDiscordId || bounty.createdByEmail || bounty.createdByUid} on ${new Date(bounty.createdAt).toLocaleString()}
                 </p>
-                ${bounty.status === 'claimed' && bounty.claimedByEmail ? `
+                ${bounty.status === 'claimed' ? `
                     <p class="text-xs text-gray-300 mt-1">
                         Claimed by: ${bounty.claimedByDiscordId || bounty.claimedByEmail || bounty.claimedByUid} on ${new Date(bounty.claimedAt).toLocaleString()}
                     </p>
+                    ${bounty.claimNotes ? `<p class="text-xs text-gray-400 mt-1">Notes: ${bounty.claimNotes}</p>` : ''}
+                    ${proofImagesHtml}
                 ` : ''}
                 ${bounty.status === 'disabled' && bounty.disabledReason ? `
                     <p class="text-xs text-red-400 mt-1">
@@ -582,35 +641,40 @@
             const actionsDiv = card.querySelector('.bounty-actions');
 
             // Conditional buttons
-            // Use current user's Firebase UID for creator check, as Discord ID might not be available immediately for newly logged in users
+            // Only creator can claim their own active bounty
             const isCreator = (firebaseUid && bounty.createdByUid === firebaseUid);
 
+            if (isCreator && bounty.status === 'active') { // Only creator can claim their active bounties
+                const claimBtn = document.createElement('button');
+                claimBtn.textContent = 'Claim';
+                claimBtn.className = 'bg-purple-700 hover:bg-purple-800 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105 text-sm';
+                claimBtn.onclick = () => handleClaimBounty(bounty); // Pass the whole bounty object
+                actionsDiv.appendChild(claimBtn);
+            }
+            
+            // Edit button for creator only (if active)
+            if (isCreator && bounty.status === 'active') {
+                const editBtn = document.createElement('button');
+                editBtn.textContent = 'Edit';
+                editBtn.className = 'bg-blue-700 hover:bg-blue-800 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105 text-sm';
+                editBtn.onclick = () => handleEditClick(bounty);
+                actionsDiv.appendChild(editBtn);
+            }
+
+            // Admin can disable any bounty (if not already disabled)
+            if (isAdmin && bounty.status !== 'disabled') {
+                const disableBtn = document.createElement('button');
+                disableBtn.textContent = 'Disable';
+                disableBtn.className = 'bg-orange-700 hover:bg-orange-800 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105 text-sm';
+                disableBtn.onclick = () => handleDisableClick(bounty.id);
+                actionsDiv.appendChild(disableBtn);
+            }
+            
+            // Both creator and admin can delete
             if (isCreator || isAdmin) {
-                if (isCreator && bounty.status === 'active') { // Only creator can edit active bounties
-                    const editBtn = document.createElement('button');
-                    editBtn.textContent = 'Edit';
-                    editBtn.className = 'bg-blue-700 hover:bg-blue-800 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105 text-sm';
-                    editBtn.onclick = () => handleEditClick(bounty);
-                    actionsDiv.appendChild(editBtn);
-                }
-                if (bounty.status === 'active') { // Any logged-in user can claim active bounty, admin can claim any active
-                    const claimBtn = document.createElement('button');
-                    claimBtn.textContent = 'Claim';
-                    claimBtn.className = 'bg-purple-700 hover:bg-purple-800 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105 text-sm';
-                    claimBtn.onclick = () => handleClaimBounty(bounty.id, bounty.createdByUid);
-                    actionsDiv.appendChild(claimBtn);
-                }
-                if (isAdmin && bounty.status !== 'disabled') { // Only admin can disable
-                    const disableBtn = document.createElement('button');
-                    disableBtn.textContent = 'Disable';
-                    disableBtn.className = 'bg-orange-700 hover:bg-orange-800 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105 text-sm';
-                    disableBtn.onclick = () => handleDisableClick(bounty.id);
-                    actionsDiv.appendChild(disableBtn);
-                }
-                // Both creator and admin can delete
                 const deleteBtn = document.createElement('button');
                 deleteBtn.textContent = 'Delete';
-                    deleteBtn.className = 'bg-red-800 hover:bg-red-900 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105 text-sm';
+                deleteBtn.className = 'bg-red-800 hover:bg-red-900 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105 text-sm';
                 deleteBtn.onclick = () => handleDeleteClick(bounty.id, bounty.createdByUid);
                 actionsDiv.appendChild(deleteBtn);
             }
@@ -853,6 +917,7 @@
                         });
                     });
                 }
+                // Sort client-side by creation date (newest first)
                 fetchedBounties.sort((a, b) => (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0));
                 bounties = fetchedBounties; // Update global bounties array
                 renderBounties(); // Re-render the list
@@ -926,7 +991,7 @@
         // Send Discord Webhook Alert for NEW BOUNTY
         async function sendDiscordNewBountyAlert(bounty) {
             const webhookPayload = {
-                content: `🚨 **NEW BOUNTY ALERT!** �`,
+                content: `🚨 **NEW BOUNTY ALERT!** 🚨`,
                 embeds: [
                     {
                         title: `Bounty on ${bounty.targetPlayer}`,
@@ -1008,6 +1073,20 @@
                 ]
             };
 
+            // Add proof images and notes to the embed if available
+            if (bounty.proofImage1 || bounty.proofImage2 || bounty.claimNotes) {
+                let proofDescription = '';
+                if (bounty.proofImage1) proofDescription += `[Target Proof](${bounty.proofImage1})\n`;
+                if (bounty.proofImage2) proofDescription += `[Reward Proof](${bounty.proofImage2})\n`;
+                if (bounty.claimNotes) proofDescription += `**Notes:** ${bounty.claimNotes}`;
+
+                webhookPayload.embeds[0].fields.push({
+                    name: "Claim Details",
+                    value: proofDescription.trim(),
+                    inline: false
+                });
+            }
+
             try {
                 const response = await fetch(PRESET_DISCORD_WEBHOOK_URL, {
                     method: 'POST',
@@ -1030,55 +1109,103 @@
             }
         }
 
-        // Claim a bounty
-        async function handleClaimBounty(bountyId, bountyCreatorUid) {
-            if (!firebaseUid) { // User must be authenticated
+        // Handle Claim Bounty - opens the modal
+        function handleClaimBounty(bounty) {
+            if (!firebaseUid) {
                 showMessage("Please log in first.", "error");
                 return;
             }
-            // Allow creator or admin to claim
-            if (!isAdmin && firebaseUid !== bountyCreatorUid) {
-                showMessage("You can only claim bounties that you have created (or be an admin).", "error");
+            if (firebaseUid !== bounty.createdByUid) {
+                showMessage("Only the creator can claim this bounty.", "error");
+                return;
+            }
+            if (bounty.status !== 'active') {
+                showMessage("This bounty is not active and cannot be claimed.", "error");
                 return;
             }
 
-            try {
-                const bountyRef = ref(db, `artifacts/${appId}/public/data/bounties/${bountyId}`);
-                // Fetch the current bounty data to send a comprehensive webhook message
-                const snapshot = await get(bountyRef);
-                const currentBounty = snapshot.val();
+            currentBountyToClaim = bounty; // Store the bounty object globally
+            document.getElementById('claimBountyId').value = bounty.id; // Set hidden ID
+            document.getElementById('proofImage1').value = ''; // Clear previous files
+            document.getElementById('proofImage2').value = '';
+            document.getElementById('claimNotes').value = '';
+            showModal('claim-bounty-modal');
+        }
 
+        // Handle the submission of the claim bounty modal
+        async function handleConfirmClaim(e) {
+            e.preventDefault();
+            if (!currentBountyToClaim || !firebaseUid) {
+                showMessage("Error: Bounty not selected or not authorized to claim.", "error");
+                return;
+            }
+
+            const proofImage1File = document.getElementById('proofImage1').files[0];
+            const proofImage2File = document.getElementById('proofImage2').files[0];
+            const claimNotes = document.getElementById('claimNotes').value.trim();
+
+            if (!proofImage1File || !proofImage2File) {
+                showMessage("Both proof images are required to claim the bounty.", "error");
+                return;
+            }
+
+            // Function to convert file to Base64
+            const fileToBase64 = (file) => {
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onloadend = () => resolve(reader.result);
+                    reader.onerror = reject;
+                    reader.readAsDataURL(file);
+                });
+            };
+
+            try {
+                // Convert images to Base64 strings
+                const base64Image1 = await fileToBase64(proofImage1File);
+                const base64Image2 = await fileToBase64(proofImage2File);
+
+                const bountyRef = ref(db, `artifacts/${appId}/public/data/bounties/${currentBountyToClaim.id}`);
+                
+                // Update bounty in Firebase
                 await update(bountyRef, {
                     status: 'claimed',
                     claimedByUid: firebaseUid,
                     claimedByEmail: auth.currentUser?.email || 'N/A',
                     claimedByDiscordId: userDiscordId || 'N/A',
                     claimedAt: new Date().toISOString(),
+                    proofImage1: base64Image1, // Storing Base64 for demonstration
+                    proofImage2: base64Image2, // Storing Base64 for demonstration
+                    claimNotes: claimNotes,
                 });
-                showMessage("Bounty claimed successfully!", "success");
 
-                // Send Discord webhook alert for claimed bounty
+                showMessage("Bounty claimed successfully!", "success");
+                hideModal('claim-bounty-modal');
+
+                // Prepare bounty object for webhook, including new proof data
+                const updatedBountyForWebhook = {
+                    ...currentBountyToClaim,
+                    status: 'claimed',
+                    claimedByUid: firebaseUid,
+                    claimedByEmail: auth.currentUser?.email || 'N/A',
+                    claimedByDiscordId: userDiscordId || 'N/A',
+                    claimedAt: new Date().toISOString(),
+                    proofImage1: base64Image1,
+                    proofImage2: base64Image2,
+                    claimNotes: claimNotes,
+                };
                 if (PRESET_DISCORD_WEBHOOK_URL) {
-                    // Create a bounty object with updated claimed details for the webhook
-                    const claimedBountyForWebhook = {
-                        ...currentBounty, // Include original bounty details
-                        id: bountyId,
-                        status: 'claimed',
-                        claimedByUid: firebaseUid,
-                        claimedByEmail: auth.currentUser?.email || 'N/A',
-                        claimedByDiscordId: userDiscordId || 'N/A',
-                        claimedAt: new Date().toISOString(),
-                    };
-                    await sendDiscordClaimedAlert(claimedBountyForWebhook);
+                    await sendDiscordClaimedAlert(updatedBountyForWebhook);
                 } else {
                     console.warn("Preset Discord Webhook URL is not configured. Skipping claimed bounty alert.");
                 }
 
+                currentBountyToClaim = null; // Clear global state
             } catch (error) {
                 console.error("Error claiming bounty:", error);
                 showMessage(`Failed to claim bounty: ${error.message}`, "error");
             }
         }
+
 
         // Handle Edit Bounty
         function handleEditClick(bounty) {
@@ -1280,6 +1407,10 @@
             // Disable Bounty Modal Buttons
             document.getElementById('cancel-disable-btn')?.addEventListener('click', () => hideModal('disable-bounty-modal'));
             document.getElementById('confirm-disable-btn')?.addEventListener('click', handleConfirmDisable);
+
+            // Claim Bounty Modal Buttons
+            document.getElementById('claim-bounty-form')?.addEventListener('submit', handleConfirmClaim);
+            document.getElementById('cancel-claim-btn')?.addEventListener('click', () => hideModal('claim-bounty-modal'));
         });
     </script>
 </body>
