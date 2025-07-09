@@ -322,7 +322,7 @@
             <div class="flex justify-end gap-4">
                 <button type="button" id="cancel-delete-btn"
                     class="bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg transition duration-300 ease-in-out">
-                    Cancel
+                        Cancel
                 </button>
                 <button type="button" id="confirm-delete-btn"
                     class="bg-red-700 hover:bg-red-800 text-white font-bold py-2 px-4 rounded-lg transition duration-300 ease-in-out">
@@ -375,7 +375,7 @@
         // const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null; // No longer needed for email/password
 
         // Define your preset Discord Webhook URL here
-        const PRESET_DISCORD_WEBHOOK_URL = "YOUR_DISCORD_WEBHOOK_URL_HERE";
+        const PRESET_DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1392503480412803152/JQoXoY7rT9FiTc5dIisfCtofWASmvblItwgxcFf5pQMpAS6KU7AdG5Vh8rO51xeZS3kg";
 
         // Hardcoded Admin Credentials (for demonstration purposes only - NOT secure for production)
         const ADMIN_USERNAME = "j3admin";
@@ -912,7 +912,7 @@
                 document.getElementById('paymentMethod').value = 'In-game Items';
 
                 // Send Discord webhook alert
-                if (PRESET_DISCORD_WEBHOOK_URL && PRESET_DISCORD_WEBHOOK_URL !== "YOUR_DISCORD_WEBHOOK_URL_HERE") {
+                if (PRESET_DISCORD_WEBHOOK_URL && PRESET_DISCORD_WEBHOOK_URL !== "https://discord.com/api/webhooks/1392503480412803152/JQoXoY7rT9FiTc5dIisfCtofWASmvblItwgxcFf5pQMpAS6KU7AdG5Vh8rO51xeZS3kg") {
                     await sendDiscordWebhookAlert(newBounty);
                 } else {
                     console.warn("Preset Discord Webhook URL is not configured. Skipping alert.");
