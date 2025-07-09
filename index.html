@@ -1,0 +1,1209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Johnny3x Rust Bounty System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Basic modal backdrop */
+        .modal-backdrop {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.75);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 50;
+        }
+        .modal-content {
+            background-color: #0c0a09; /* gray-950 */
+            padding: 2rem;
+            border-radius: 0.75rem; /* rounded-xl */
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); /* shadow-lg */
+            border: 1px solid #dc2626; /* border-red-700 */
+            width: 90%;
+            max-width: 32rem; /* max-w-md */
+            color: #ffffff;
+        }
+        /* Hide element utility */
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-black text-white p-4 sm:p-6 lg:p-8">
+    <div id="loading-indicator" class="flex items-center justify-center min-h-screen bg-black text-white">
+        <div class="text-xl font-semibold text-red-500">Loading bounty system...</div>
+    </div>
+
+    <div id="main-content" class="hidden max-w-4xl mx-auto bg-gray-950 rounded-xl shadow-lg p-6 sm:p-8">
+        <h1 class="text-3xl sm:text-4xl font-bold text-center text-red-500 mb-6">
+            Johnny3x Rust Bounty System
+        </h1>
+
+        <div id="message-container" class="hidden p-3 mb-4 rounded-lg text-center text-white"></div>
+
+        <div class="mb-8 p-4 bg-gray-900 rounded-lg shadow-md text-center relative">
+            <h2 class="text-xl font-semibold mb-3 text-red-400">User Login</h2>
+            <div id="auth-status">
+                <p class="text-gray-300 mb-4">
+                    Please log in or register to create or manage bounties.
+                </p>
+                <button id="login-register-btn"
+                    class="bg-red-700 hover:bg-red-800 text-white font-bold py-3 px-6 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105">
+                    Login / Register
+                </button>
+            </div>
+            <button id="admin-login-btn"
+                class="absolute top-3 right-3 text-gray-400 hover:text-red-400 transition-colors duration-200"
+                title="Admin Login">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                    class="lucide lucide-settings">
+                    <path
+                        d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.78 1.22a2 2 0 0 0 .73 2.73l.09.09a2 2 0 0 1 0 2.83l-.08.15a2 2 0 0 0-.73 2.73l1.22.78a2 2 0 =0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.78-1.22a2 2 0 0 0-.73-2.73l-.09-.09a2 2 0 0 1 0-2.83l.08-.15a2 2 0 0 0 .73-2.73l-1.22-.78a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
+                    <circle cx="12" cy="12" r="3" />
+                </svg>
+            </button>
+        </div>
+
+        <div class="mb-8 p-4 bg-red-900 bg-opacity-30 border border-red-700 rounded-lg shadow-md text-center">
+            <p class="text-red-300 font-bold text-lg">
+                ⚠️ WARNING: Failure to honor a bounty reward will result in a permanent blacklist from Johnny3x Rust
+                Bounty Site Services.
+            </p>
+        </div>
+
+        <div id="authenticated-sections" class="hidden">
+            <div class="mb-8 p-4 bg-gray-900 rounded-lg shadow-md">
+                <h2 class="text-xl font-semibold mb-3 text-red-400">Add New Bounty</h2>
+                <form id="add-bounty-form" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="col-span-1">
+                        <label for="targetPlayer" class="block text-gray-300 text-sm font-bold mb-2">
+                            Target Player Name:
+                        </label>
+                        <input type="text" id="targetPlayer" placeholder="e.g., RustPlayer123"
+                            class="w-full p-3 rounded-lg bg-gray-950 border border-red-700 text-white placeholder-red-200 focus:ring-2 focus:ring-red-600 focus:border-transparent"
+                            required>
+                    </div>
+                    <div class="col-span-1">
+                        <label for="amount" class="block text-gray-300 text-sm font-bold mb-2">
+                            Bounty Amount:
+                        </label>
+                        <input type="number" id="amount" placeholder="e.g., 500" min="1"
+                            class="w-full p-3 rounded-lg bg-gray-950 border border-red-700 text-white placeholder-red-200 focus:ring-2 focus:ring-red-600 focus:border-transparent"
+                            required>
+                    </div>
+                    <div class="col-span-full">
+                        <label for="reason" class="block text-gray-300 text-sm font-bold mb-2">
+                            Reason for Bounty:
+                        </label>
+                        <textarea id="reason" placeholder="e.g., Excessive raiding, griefing, base destruction" rows="3"
+                            class="w-full p-3 rounded-lg bg-gray-950 border border-red-700 text-white placeholder-red-200 focus:ring-2 focus:ring-red-600 focus:border-transparent resize-y"
+                            required></textarea>
+                    </div>
+                    <div class="col-span-full">
+                        <label for="paymentMethod" class="block text-gray-300 text-sm font-bold mb-2">
+                            Preferred Payment Method:
+                        </label>
+                        <select id="paymentMethod"
+                            class="w-full p-3 rounded-lg bg-gray-950 border border-red-700 text-white focus:ring-2 focus:ring-red-600 focus:border-transparent">
+                            <option value="In-game Items">In-game Items</option>
+                            <option value="Johnny Coins">Johnny Coins</option>
+                            <option value="IRL Payments">IRL Payments</option>
+                        </select>
+                    </div>
+                    <div class="col-span-full text-center">
+                        <button type="submit" id="add-bounty-submit-btn"
+                            class="bg-red-700 hover:bg-red-800 text-white font-bold py-3 px-8 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105">
+                            Add Bounty
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="mb-6 p-4 bg-gray-900 rounded-lg shadow-md grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label for="searchBounties" class="block text-gray-300 text-sm font-bold mb-2">
+                        Search Bounties:
+                    </label>
+                    <input type="text" id="searchBounties"
+                        placeholder="Search by player, reason, or creator Discord ID..."
+                        class="w-full p-3 rounded-lg bg-gray-950 border border-red-700 text-white placeholder-red-200 focus:ring-2 focus:ring-red-600 focus:border-transparent">
+                </div>
+                <div>
+                    <label for="searchPaymentMethod" class="block text-gray-300 text-sm font-bold mb-2">
+                        Filter by Payment Method:
+                    </label>
+                    <select id="searchPaymentMethod"
+                        class="w-full p-3 rounded-lg bg-gray-950 border border-red-700 text-white focus:ring-2 focus:ring-red-600 focus:border-transparent">
+                        <option value="All">All Payment Methods</option>
+                        <option value="In-game Items">In-game Items</option>
+                        <option value="Johnny Coins">Johnny Coins</option>
+                        <option value="IRL Payments">IRL Payments</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="p-4 bg-gray-900 rounded-lg shadow-md">
+            <div class="flex justify-center mb-4 border-b border-red-700">
+                <button id="active-bounties-tab"
+                    class="px-6 py-2 text-lg font-semibold rounded-t-lg transition duration-300 ease-in-out bg-red-700 text-white">
+                    Active Bounties (<span id="active-bounties-count">0</span>)
+                </button>
+                <button id="completed-bounties-tab"
+                    class="px-6 py-2 text-lg font-semibold rounded-t-lg transition duration-300 ease-in-out bg-gray-800 text-gray-300 hover:bg-gray-700">
+                    Completed Bounties (<span id="completed-bounties-count">0</span>)
+                </button>
+            </div>
+
+            <div id="active-bounties-list">
+                <h2 class="text-xl font-semibold mb-4 text-red-400">Active Bounties</h2>
+                <div id="active-bounties-container" class="grid grid-cols-1 gap-4">
+                    <p class="text-gray-300 text-center" id="no-active-bounties">No active bounties. Add one above or adjust your search/filters!</p>
+                </div>
+            </div>
+
+            <div id="completed-bounties-list" class="hidden">
+                <h2 class="text-xl font-semibold mb-4 text-red-400">Completed Bounties</h2>
+                <div id="completed-bounties-container" class="grid grid-cols-1 gap-4">
+                    <p class="text-gray-300 text-center" id="no-completed-bounties">No bounties have been completed yet or adjust your search/filters.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="login-register-modal" class="modal-backdrop hidden">
+        <div class="modal-content">
+            <h3 class="text-2xl font-bold text-red-400 mb-4 text-center" id="login-register-modal-title">Login</h3>
+            <p id="auth-error-message" class="text-red-500 text-center mb-4 hidden"></p>
+
+            <form id="email-password-form">
+                <div class="mb-4">
+                    <label for="authEmail" class="block text-gray-300 text-sm font-bold mb-2">
+                        Email:
+                    </label>
+                    <input type="email" id="authEmail" placeholder="your@email.com"
+                        class="w-full p-3 rounded-lg bg-gray-950 border border-red-700 text-white placeholder-red-200 focus:ring-2 focus:ring-red-600"
+                        required />
+                </div>
+                <div class="mb-6">
+                    <label for="authPassword" class="block text-gray-300 text-sm font-bold mb-2">
+                        Password:
+                    </label>
+                    <input type="password" id="authPassword"
+                        class="w-full p-3 rounded-lg bg-gray-950 border border-red-700 text-white focus:ring-2 focus:ring-red-600"
+                        required />
+                </div>
+                <div class="mb-6" id="discord-id-field">
+                    <label for="authDiscordId" class="block text-gray-300 text-sm font-bold mb-2">
+                        Your Discord ID (numeric):
+                        <span class="text-xs text-gray-400 block mt-1">Find this using `/id` in the Discord server or in Discord settings (Developer Mode).</span>
+                    </label>
+                    <input type="text" id="authDiscordId" placeholder="e.g., 123456789012345678"
+                        class="w-full p-3 rounded-lg bg-gray-950 border border-red-700 text-white placeholder-red-200 focus:ring-2 focus:ring-red-600"
+                        required />
+                </div>
+                <div class="flex justify-end gap-4">
+                    <button type="button" id="cancel-auth-btn"
+                        class="bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg transition duration-300 ease-in-out">
+                        Cancel
+                    </button>
+                    <button type="submit" id="confirm-auth-btn"
+                        class="bg-red-700 hover:bg-red-800 text-white font-bold py-2 px-4 rounded-lg transition duration-300 ease-in-out">
+                        Login
+                    </button>
+                </div>
+                <div class="mt-4 text-center">
+                    <button type="button" id="toggle-register-btn" class="text-gray-400 hover:text-red-400 text-sm">
+                        Don't have an account? Register here.
+                    </button>
+                    <button type="button" id="toggle-login-btn" class="text-gray-400 hover:text-red-400 text-sm hidden">
+                        Already have an account? Login here.
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
+    <div id="admin-login-modal" class="modal-backdrop hidden">
+        <div class="modal-content">
+            <h3 class="text-2xl font-bold text-red-400 mb-4 text-center">Admin Login</h3>
+            <p class="text-gray-300 mb-4 text-center">
+                Enter admin credentials to gain full management access.
+            </p>
+            <input type="text" id="adminUsernameInput" placeholder="Username"
+                class="w-full p-3 rounded-lg bg-gray-950 border border-red-700 text-white placeholder-red-200 focus:ring-2 focus:ring-red-600 focus:border-transparent mb-4" />
+            <input type="password" id="adminPasswordInput" placeholder="Password"
+                class="w-full p-3 rounded-lg bg-gray-950 border border-red-700 text-white placeholder-red-200 focus:ring-2 focus:ring-red-600 focus:border-transparent mb-4" />
+            <div class="flex justify-end gap-4">
+                <button type="button" id="cancel-admin-login-btn"
+                    class="bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg transition duration-300 ease-in-out">
+                    Cancel
+                </button>
+                <button type="button" id="confirm-admin-login-btn"
+                    class="bg-red-700 hover:bg-red-800 text-white font-bold py-2 px-4 rounded-lg transition duration-300 ease-in-out">
+                    Login
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="edit-bounty-modal" class="modal-backdrop hidden">
+        <div class="modal-content">
+            <h3 class="text-2xl font-bold text-red-400 mb-4 text-center">Edit Bounty</h3>
+            <form id="edit-bounty-form">
+                <input type="hidden" id="editBountyId" />
+                <div class="mb-4">
+                    <label for="editTargetPlayer" class="block text-gray-300 text-sm font-bold mb-2">
+                        Target Player Name:
+                    </label>
+                    <input type="text" id="editTargetPlayer"
+                        class="w-full p-3 rounded-lg bg-gray-950 border border-red-700 text-white focus:ring-2 focus:ring-red-600"
+                        required />
+                </div>
+                <div class="mb-4">
+                    <label for="editAmount" class="block text-gray-300 text-sm font-bold mb-2">
+                        Bounty Amount:
+                    </label>
+                    <input type="number" id="editAmount" min="1"
+                        class="w-full p-3 rounded-lg bg-gray-950 border border-red-700 text-white focus:ring-2 focus:ring-red-600"
+                        required />
+                </div>
+                <div class="mb-4">
+                    <label for="editReason" class="block text-gray-300 text-sm font-bold mb-2">
+                        Reason for Bounty:
+                    </label>
+                    <textarea id="editReason" rows="3"
+                        class="w-full p-3 rounded-lg bg-gray-950 border border-red-700 text-white focus:ring-2 focus:ring-red-600 resize-y"
+                        required></textarea>
+                </div>
+                <div class="mb-6">
+                    <label for="editPaymentMethod" class="block text-gray-300 text-sm font-bold mb-2">
+                        Preferred Payment Method:
+                    </label>
+                    <select id="editPaymentMethod"
+                        class="w-full p-3 rounded-lg bg-gray-950 border border-red-700 text-white focus:ring-2 focus:ring-red-600">
+                        <option value="In-game Items">In-game Items</option>
+                        <option value="Johnny Coins">Johnny Coins</option>
+                        <option value="IRL Payments">IRL Payments</option>
+                    </select>
+                </div>
+                <div class="flex justify-end gap-4">
+                    <button type="button" id="cancel-edit-bounty-btn"
+                        class="bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg transition duration-300 ease-in-out">
+                        Cancel
+                    </button>
+                    <button type="submit"
+                        class="bg-red-700 hover:bg-red-800 text-white font-bold py-2 px-4 rounded-lg transition duration-300 ease-in-out">
+                        Save Changes
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="delete-confirm-modal" class="modal-backdrop hidden">
+        <div class="modal-content">
+            <h3 class="text-2xl font-bold text-red-400 mb-4 text-center">Confirm Deletion</h3>
+            <p class="text-gray-300 mb-6 text-center">
+                Are you sure you want to delete this bounty? This action cannot be undone.
+            </p>
+            <div class="flex justify-end gap-4">
+                <button type="button" id="cancel-delete-btn"
+                    class="bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg transition duration-300 ease-in-out">
+                    Cancel
+                </button>
+                <button type="button" id="confirm-delete-btn"
+                    class="bg-red-700 hover:bg-red-800 text-white font-bold py-2 px-4 rounded-lg transition duration-300 ease-in-out">
+                    Delete
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="disable-bounty-modal" class="modal-backdrop hidden">
+        <div class="modal-content">
+            <h3 class="text-2xl font-bold text-red-400 mb-4 text-center">Disable Bounty</h3>
+            <p class="text-gray-300 mb-4 text-center">
+                Please provide a reason for disabling this bounty.
+            </p>
+            <textarea id="disableReasonInput"
+                placeholder="Reason for disablement (e.g., Creator requested, invalid bounty, completed out-of-site)"
+                rows="4"
+                class="w-full p-3 rounded-lg bg-gray-950 border border-red-700 text-white placeholder-red-200 focus:ring-2 focus:ring-600 focus:border-transparent mb-4 resize-y"></textarea>
+            <div class="flex justify-end gap-4">
+                <button type="button" id="cancel-disable-btn"
+                    class="bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg transition duration-300 ease-in-out">
+                    Cancel
+                </button>
+                <button type="button" id="confirm-disable-btn"
+                    class="bg-red-700 hover:bg-red-800 text-white font-bold py-2 px-4 rounded-lg transition duration-300 ease-in-out">
+                    Confirm Disable
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getDatabase, ref, push, set, update, remove, onValue, off, get, child } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-database.js";
+        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js"; // Updated imports for email/password
+
+        // User-provided Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyCcAUdGbyBkZuP9i-s7ybHrH-LVJzxQkbU",
+            authDomain: "johnny3x-bounties.firebaseapp.com",
+            projectId: "johnny3x-bounties",
+            storageBucket: "johnny3x-bounties.firebasestorage.app",
+            messagingSenderId: "41052099325",
+            appId: "1:41052099325:web:6921a7ad893024f3622494"
+        };
+
+        // Ensure these global variables are available in the Canvas environment
+        const appId = typeof __app_id !== 'undefined' ? __app_id : firebaseConfig.projectId;
+        // const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null; // No longer needed for email/password
+
+        // Define your preset Discord Webhook URL here
+        const PRESET_DISCORD_WEBHOOK_URL = "YOUR_DISCORD_WEBHOOK_URL_HERE";
+
+        // Hardcoded Admin Credentials (for demonstration purposes only - NOT secure for production)
+        const ADMIN_USERNAME = "j3admin";
+        const ADMIN_PASSWORD = "j3staffpassword";
+
+        // Firebase App and Services
+        let app;
+        let db;
+        let auth;
+
+        try {
+            app = initializeApp(firebaseConfig);
+            db = getDatabase(app);
+            auth = getAuth(app);
+        } catch (error) {
+            console.error("Firebase initialization failed:", error);
+            showMessage("Firebase initialization failed. Please check your environment setup.", "error");
+        }
+
+        // Global State Variables
+        let bounties = [];
+        let firebaseUid = null;
+        let userDiscordId = ''; // This will be stored in user profile
+        let authReady = false;
+        let isLoading = true;
+        let isAdmin = false;
+        let currentBountyToEdit = null;
+        let bountyToDeleteId = null;
+        let bountyToDisableId = null;
+
+        // Flags for login/register modal
+        let isRegisterMode = false;
+
+
+        // --- Utility Functions ---
+
+        function showMessage(msg, type) {
+            const msgContainer = document.getElementById('message-container');
+            if (!msgContainer) return; // Defensive check
+            msgContainer.textContent = msg;
+            msgContainer.classList.remove('hidden', 'bg-green-700', 'bg-red-700');
+            if (type === 'success') {
+                msgContainer.classList.add('bg-green-700');
+            } else {
+                msgContainer.classList.add('bg-red-700');
+            }
+            setTimeout(() => {
+                msgContainer.classList.add('hidden');
+            }, 5000);
+        }
+
+        function showModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) modal.classList.remove('hidden');
+        }
+
+        function hideModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) modal.classList.add('hidden');
+        }
+
+        function updateLoadingState() {
+            const loadingIndicator = document.getElementById('loading-indicator');
+            const mainContent = document.getElementById('main-content');
+            if (!loadingIndicator || !mainContent) return;
+
+            if (isLoading) {
+                loadingIndicator.classList.remove('hidden');
+                mainContent.classList.add('hidden');
+            } else {
+                loadingIndicator.classList.add('hidden');
+                mainContent.classList.remove('hidden');
+            }
+        }
+
+        function updateAuthStatus() {
+            const statusDiv = document.getElementById('auth-status');
+            const authenticatedSections = document.getElementById('authenticated-sections');
+            if (!statusDiv || !authenticatedSections) return;
+
+            if (firebaseUid) { // Check if a user is authenticated (firebaseUid is set)
+                statusDiv.innerHTML = `
+                    <p class="text-gray-300">
+                        Logged in as: <span class="font-mono text-red-300">${auth.currentUser.email}</span>
+                        ${userDiscordId ? `<span class="ml-2 text-gray-400">(Discord ID: ${userDiscordId})</span>` : ''}
+                        ${isAdmin ? '<span class="ml-2 px-2 py-1 bg-red-600 rounded-md text-xs font-bold">ADMIN</span>' : ''}
+                    </p>
+                    <button id="logout-btn"
+                        class="mt-4 bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300 ease-in-out">
+                        Logout
+                    </button>
+                `;
+                authenticatedSections.classList.remove('hidden');
+                document.getElementById('logout-btn')?.addEventListener('click', handleLogout);
+
+            } else {
+                statusDiv.innerHTML = `
+                    <p class="text-gray-300 mb-4">
+                        Please log in or register to create or manage bounties.
+                    </p>
+                    <button id="login-register-btn"
+                        class="bg-red-700 hover:bg-red-800 text-white font-bold py-3 px-6 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105">
+                        Login / Register
+                    </button>
+                `;
+                authenticatedSections.classList.add('hidden');
+                document.getElementById('login-register-btn')?.addEventListener('click', handleLoginRegisterModal);
+            }
+        }
+
+
+        function renderBounties() {
+            const activeContainer = document.getElementById('active-bounties-container');
+            const completedContainer = document.getElementById('completed-bounties-container');
+            const noActiveBounties = document.getElementById('no-active-bounties');
+            const noCompletedBounties = document.getElementById('no-completed-bounties');
+
+            if (!activeContainer || !completedContainer || !noActiveBounties || !noCompletedBounties) {
+                console.warn("Bounty containers not found in DOM yet.");
+                return; // Exit if elements are not ready
+            }
+
+            activeContainer.innerHTML = ''; // Clear existing bounties
+            completedContainer.innerHTML = ''; // Clear existing bounties
+
+            const filteredAndSortedBounties = bounties.filter(bounty => {
+                const lowerCaseSearchTerm = document.getElementById('searchBounties')?.value.toLowerCase() || '';
+                const searchPaymentMethod = document.getElementById('searchPaymentMethod')?.value || 'All';
+
+                const matchesSearchTerm = (
+                    bounty.targetPlayer.toLowerCase().includes(lowerCaseSearchTerm) ||
+                    bounty.reason.toLowerCase().includes(lowerCaseSearchTerm) ||
+                    (bounty.createdByDiscordId && bounty.createdByDiscordId.toLowerCase().includes(lowerCaseSearchTerm))
+                );
+
+                const matchesPaymentMethod = (
+                    searchPaymentMethod === 'All' || bounty.paymentMethod === searchPaymentMethod
+                );
+
+                return matchesSearchTerm && matchesPaymentMethod;
+            });
+
+            const activeBounties = filteredAndSortedBounties.filter(b => b.status === 'active');
+            const completedBounties = filteredAndSortedBounties.filter(b => b.status === 'claimed' || b.status === 'disabled');
+
+            document.getElementById('active-bounties-count').textContent = activeBounties.length;
+            document.getElementById('completed-bounties-count').textContent = completedBounties.length;
+
+            if (activeBounties.length === 0) {
+                noActiveBounties.classList.remove('hidden');
+            } else {
+                noActiveBounties.classList.add('hidden');
+                activeBounties.forEach(bounty => {
+                    activeContainer.appendChild(createBountyCard(bounty, 'active'));
+                });
+            }
+
+            if (completedBounties.length === 0) {
+                noCompletedBounties.classList.remove('hidden');
+            } else {
+                noCompletedBounties.classList.add('hidden');
+                completedBounties.forEach(bounty => {
+                    completedContainer.appendChild(createBountyCard(bounty, 'completed'));
+                });
+            }
+        }
+
+        function createBountyCard(bounty, tabType) {
+            const card = document.createElement('div');
+            card.className = `p-4 rounded-lg shadow-inner border ${bounty.status === 'disabled' ? 'bg-gray-800 border-gray-700 opacity-75' : 'bg-gray-950 border-red-700'}`;
+            
+            const statusColorClass = bounty.status === 'claimed' ? 'bg-gray-700' : (bounty.status === 'disabled' ? 'bg-red-900' : 'bg-red-600');
+            const textColorClass = bounty.status === 'disabled' ? 'text-gray-400' : 'text-red-300';
+            const amountTextColorClass = bounty.status === 'disabled' ? 'text-gray-500' : 'text-red-200';
+
+            card.innerHTML = `
+                <div class="flex justify-between items-start mb-2">
+                    <h3 class="text-xl font-bold ${textColorClass}">${bounty.targetPlayer}</h3>
+                    <span class="px-3 py-1 rounded-full text-sm font-semibold ${statusColorClass}">
+                        ${bounty.status.toUpperCase()}
+                    </span>
+                </div>
+                <p class="text-lg ${amountTextColorClass} mb-2">Amount: ${bounty.amount}</p>
+                <p class="text-gray-300 mb-1">Reason: ${bounty.reason}</p>
+                <p class="text-gray-300 mb-3">Payment: ${bounty.paymentMethod}</p>
+                <p class="text-xs text-gray-300">
+                    Created by: ${bounty.createdByEmail || bounty.createdByDiscordId || bounty.createdByUid} on ${new Date(bounty.createdAt).toLocaleString()}
+                </p>
+                ${bounty.status === 'claimed' && bounty.claimedByEmail ? `
+                    <p class="text-xs text-gray-300 mt-1">
+                        Claimed by: ${bounty.claimedByEmail || bounty.claimedByDiscordId || bounty.claimedByUid} on ${new Date(bounty.claimedAt).toLocaleString()}
+                    </p>
+                ` : ''}
+                ${bounty.status === 'disabled' && bounty.disabledReason ? `
+                    <p class="text-xs text-red-400 mt-1">
+                        Disabled by: ${bounty.disabledBy || 'N/A'} on ${new Date(bounty.disabledAt).toLocaleString()}
+                        <br />Reason: ${bounty.disabledReason}
+                    </p>
+                ` : ''}
+                <div class="mt-4 flex justify-end gap-2 bounty-actions">
+                    </div>
+            `;
+
+            const actionsDiv = card.querySelector('.bounty-actions');
+
+            // Conditional buttons
+            // Use current user's Firebase UID for creator check, as Discord ID might not be available immediately for newly logged in users
+            const isCreator = (firebaseUid && bounty.createdByUid === firebaseUid);
+
+            if (isCreator || isAdmin) {
+                if (isCreator && bounty.status === 'active') { // Only creator can edit active bounties
+                    const editBtn = document.createElement('button');
+                    editBtn.textContent = 'Edit';
+                    editBtn.className = 'bg-blue-700 hover:bg-blue-800 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105 text-sm';
+                    editBtn.onclick = () => handleEditClick(bounty);
+                    actionsDiv.appendChild(editBtn);
+                }
+                if (bounty.status === 'active') { // Any logged-in user can claim active bounty, admin can claim any active
+                    const claimBtn = document.createElement('button');
+                    claimBtn.textContent = 'Claim';
+                    claimBtn.className = 'bg-purple-700 hover:bg-purple-800 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105 text-sm';
+                    claimBtn.onclick = () => handleClaimBounty(bounty.id, bounty.createdByUid);
+                    actionsDiv.appendChild(claimBtn);
+                }
+                if (isAdmin && bounty.status !== 'disabled') { // Only admin can disable
+                    const disableBtn = document.createElement('button');
+                    disableBtn.textContent = 'Disable';
+                    disableBtn.className = 'bg-orange-700 hover:bg-orange-800 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105 text-sm';
+                    disableBtn.onclick = () => handleDisableClick(bounty.id);
+                    actionsDiv.appendChild(disableBtn);
+                }
+                // Both creator and admin can delete
+                const deleteBtn = document.createElement('button');
+                deleteBtn.textContent = 'Delete';
+                    deleteBtn.className = 'bg-red-800 hover:bg-red-900 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105 text-sm';
+                deleteBtn.onclick = () => handleDeleteClick(bounty.id, bounty.createdByUid);
+                actionsDiv.appendChild(deleteBtn);
+            }
+
+            return card;
+        }
+
+        // --- Authentication Logic ---
+
+        // Firebase Auth Listener
+        document.addEventListener('DOMContentLoaded', () => { // Ensure DOM is loaded before setting up listener
+            onAuthStateChanged(auth, async (user) => {
+                if (user) {
+                    firebaseUid = user.uid;
+                    authReady = true;
+                    console.log("Firebase User authenticated:", firebaseUid, user.email);
+                    console.log("Current authenticated user:", auth.currentUser); // Log current user for debugging
+
+                    // Fetch user's saved Discord ID from Realtime DB
+                    try {
+                        const userProfileRef = ref(db, `artifacts/${appId}/users/${firebaseUid}/profile`);
+                        const snapshot = await get(userProfileRef);
+                        if (snapshot.exists() && snapshot.val().discordId) {
+                            userDiscordId = snapshot.val().discordId;
+                        } else {
+                            userDiscordId = ''; // Clear if not found
+                        }
+                    } catch (error) {
+                        console.error("Error fetching user Discord ID:", error);
+                        userDiscordId = ''; // Ensure it's cleared on error
+                    }
+                } else {
+                    firebaseUid = null;
+                    userDiscordId = '';
+                    authReady = true; // Still ready, but unauthenticated
+                    isAdmin = false; // Reset admin status on logout
+                }
+                isLoading = false;
+                updateLoadingState();
+                updateAuthStatus(); // Update UI based on auth state
+                renderBounties(); // Initial render after auth state is known
+            });
+        });
+
+        // Toggle between Login and Register views
+        function toggleAuthMode() {
+            isRegisterMode = !isRegisterMode;
+            const title = document.getElementById('login-register-modal-title');
+            const confirmButton = document.getElementById('confirm-auth-btn');
+            const toggleRegisterBtn = document.getElementById('toggle-register-btn');
+            const toggleLoginBtn = document.getElementById('toggle-login-btn');
+            const discordIdField = document.getElementById('discord-id-field');
+
+            if (isRegisterMode) {
+                title.textContent = 'Register';
+                confirmButton.textContent = 'Register';
+                toggleRegisterBtn.classList.add('hidden');
+                toggleLoginBtn.classList.remove('hidden');
+                discordIdField.classList.remove('hidden'); // Discord ID required for registration
+                document.getElementById('authEmail').value = '';
+                document.getElementById('authPassword').value = '';
+                document.getElementById('authDiscordId').value = '';
+                document.getElementById('auth-error-message').classList.add('hidden');
+            } else {
+                title.textContent = 'Login';
+                confirmButton.textContent = 'Login';
+                toggleRegisterBtn.classList.remove('hidden');
+                toggleLoginBtn.classList.add('hidden');
+                discordIdField.classList.add('hidden'); // Discord ID not required for direct login
+                document.getElementById('authEmail').value = '';
+                document.getElementById('authPassword').value = '';
+                document.getElementById('authDiscordId').value = '';
+                document.getElementById('auth-error-message').classList.add('hidden');
+            }
+        }
+
+        // Show the login/register modal
+        function handleLoginRegisterModal() {
+            isRegisterMode = false; // Default to login mode
+            toggleAuthMode(); // Set initial state
+            showModal('login-register-modal');
+        }
+
+        // Handle Email/Password Login or Register submission
+        async function handleEmailPasswordAuth(e) {
+            e.preventDefault();
+            const email = document.getElementById('authEmail').value.trim();
+            const password = document.getElementById('authPassword').value.trim();
+            const discordId = document.getElementById('authDiscordId').value.trim();
+            const errorMessageElement = document.getElementById('auth-error-message');
+            errorMessageElement.classList.add('hidden'); // Hide previous errors
+
+            if (!email || !password) {
+                errorMessageElement.textContent = "Email and password cannot be empty.";
+                errorMessageElement.classList.remove('hidden');
+                return;
+            }
+
+            if (isRegisterMode) {
+                if (!discordId) {
+                    errorMessageElement.textContent = "Discord ID is required for registration.";
+                    errorMessageElement.classList.remove('hidden');
+                    return;
+                }
+                if (!/^\d+$/.test(discordId)) { // Basic numeric Discord ID validation
+                    errorMessageElement.textContent = "Discord ID must be numeric.";
+                    errorMessageElement.classList.remove('hidden');
+                    return;
+                }
+                if (password.length < 6) {
+                    errorMessageElement.textContent = "Password must be at least 6 characters long.";
+                    errorMessageElement.classList.remove('hidden');
+                    return;
+                }
+
+                // Check if Discord ID is already linked
+                try {
+                    const discordIdToUidRef = ref(db, `artifacts/${appId}/discordIdToUid/${discordId}`);
+                    const snapshot = await get(discordIdToUidRef);
+                    if (snapshot.exists()) {
+                        errorMessageElement.textContent = "This Discord ID is already registered. Please login or use a different Discord ID.";
+                        errorMessageElement.classList.remove('hidden');
+                        return;
+                    }
+                } catch (dbError) {
+                    console.error("Error checking Discord ID existence:", dbError);
+                    errorMessageElement.textContent = `Error during registration check: ${dbError.message}`;
+                    errorMessageElement.classList.remove('hidden');
+                    return;
+                }
+
+                // Register new user
+                try {
+                    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+                    const uid = userCredential.user.uid;
+
+                    // Store Discord ID in user's profile and map Discord ID to UID
+                    await set(ref(db, `artifacts/${appId}/users/${uid}/profile`), { discordId: discordId });
+                    await set(ref(db, `artifacts/${appId}/discordIdToUid/${discordId}`), uid);
+
+                    userDiscordId = discordId; // Update global state
+                    showMessage("Registration successful! Logged in.", "success");
+                    hideModal('login-register-modal');
+                } catch (error) {
+                    console.error("Registration failed:", error);
+                    let displayMessage = "Registration failed.";
+                    if (error.code === 'auth/email-already-in-use') {
+                        displayMessage = "This email is already in use. Try logging in.";
+                    } else if (error.code === 'auth/invalid-email') {
+                        displayMessage = "Invalid email address.";
+                    } else if (error.code === 'auth/weak-password') {
+                        displayMessage = "Password is too weak. It must be at least 6 characters.";
+                    }
+                    errorMessageElement.textContent = displayMessage;
+                    errorMessageElement.classList.remove('hidden');
+                }
+            } else {
+                // Login existing user
+                try {
+                    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+                    const uid = userCredential.user.uid;
+
+                    // Fetch user's Discord ID upon successful login
+                    const userProfileRef = ref(db, `artifacts/${appId}/users/${uid}/profile`);
+                    const snapshot = await get(userProfileRef);
+                    if (snapshot.exists() && snapshot.val().discordId) {
+                        userDiscordId = snapshot.val().discordId;
+                    } else {
+                        // This case handles users who might have existed before Discord ID was mandatory,
+                        // or if their profile data is somehow missing the Discord ID.
+                        // You might prompt them to enter it here, or just proceed without it for now.
+                        console.warn("User profile missing Discord ID for UID:", uid);
+                        userDiscordId = ''; // Ensure it's empty if not found
+                    }
+
+                    showMessage("Logged in successfully!", "success");
+                    hideModal('login-register-modal');
+                } catch (error) {
+                    console.error("Login failed:", error);
+                    let displayMessage = "Login failed.";
+                    if (error.code === 'auth/invalid-email' || error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found') {
+                        displayMessage = "Invalid email or password.";
+                    }
+                    errorMessageElement.textContent = displayMessage;
+                    errorMessageElement.classList.remove('hidden');
+                }
+            }
+        }
+
+        // Handle Logout
+        async function handleLogout() {
+            try {
+                await signOut(auth);
+                showMessage("Logged out successfully!", "success");
+                // onAuthStateChanged listener will handle updating UI
+            } catch (error) {
+                console.error("Error logging out:", error);
+                showMessage(`Logout failed: ${error.message}`, "error");
+            }
+        }
+
+        // Admin Login
+        function handleAdminLogin() {
+            document.getElementById('adminUsernameInput').value = '';
+            document.getElementById('adminPasswordInput').value = '';
+            showModal('admin-login-modal');
+        }
+
+        function handleAdminLoginAttempt() {
+            const username = document.getElementById('adminUsernameInput').value;
+            const password = document.getElementById('adminPasswordInput').value;
+
+            if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
+                isAdmin = true;
+                showMessage("Admin login successful!", "success");
+                hideModal('admin-login-modal');
+                updateAuthStatus(); // Update status to show ADMIN badge
+                renderBounties(); // Re-render bounties to show admin options
+            } else {
+                showMessage("Invalid admin credentials.", "error");
+            }
+        }
+
+        // --- Bounty Management Logic ---
+
+        // Listen for real-time bounty updates
+        if (db) {
+            const bountiesRef = ref(db, `artifacts/${appId}/public/data/bounties`);
+            onValue(bountiesRef, (snapshot) => {
+                const data = snapshot.val();
+                const fetchedBounties = [];
+                if (data) {
+                    Object.keys(data).forEach(key => {
+                        fetchedBounties.push({
+                            id: key,
+                            ...data[key],
+                            createdAt: data[key].createdAt ? new Date(data[key].createdAt) : new Date(),
+                            claimedAt: data[key].claimedAt ? new Date(data[key].claimedAt) : null,
+                            disabledAt: data[key].disabledAt ? new Date(data[key].disabledAt) : null,
+                        });
+                    });
+                }
+                fetchedBounties.sort((a, b) => (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0));
+                bounties = fetchedBounties; // Update global bounties array
+                renderBounties(); // Re-render the list
+            }, (error) => {
+                console.error("Error fetching bounties:", error);
+                showMessage(`Failed to load bounties: ${error.message}`, "error");
+            });
+        }
+
+
+        // Add a new bounty
+        async function handleAddBounty(e) {
+            e.preventDefault();
+            if (!firebaseUid) { // User must be authenticated
+                showMessage("Please log in or register first.", "error");
+                return;
+            }
+
+            const targetPlayer = document.getElementById('targetPlayer').value.trim();
+            const amount = parseFloat(document.getElementById('amount').value);
+            const reason = document.getElementById('reason').value.trim();
+            const paymentMethod = document.getElementById('paymentMethod').value;
+
+            if (!targetPlayer || !amount || !reason) {
+                showMessage("All fields are required to add a bounty.", "error");
+                return;
+            }
+            if (isNaN(amount) || amount <= 0) {
+                showMessage("Amount must be a positive number.", "error");
+                return;
+            }
+
+            const newBounty = {
+                targetPlayer: targetPlayer,
+                amount: amount,
+                reason: reason,
+                paymentMethod: paymentMethod,
+                status: 'active',
+                disabled: false,
+                disabledReason: '',
+                createdAt: new Date().toISOString(),
+                createdByUid: firebaseUid,
+                createdByEmail: auth.currentUser?.email || 'N/A', // Store email
+                createdByDiscordId: userDiscordId || 'N/A', // Store Discord ID if available
+            };
+
+            try {
+                const bountiesListRef = ref(db, `artifacts/${appId}/public/data/bounties`);
+                const newBountyRef = push(bountiesListRef);
+                await set(newBountyRef, newBounty);
+                showMessage("Bounty added successfully!", "success");
+
+                // Clear form
+                document.getElementById('targetPlayer').value = '';
+                document.getElementById('amount').value = '';
+                document.getElementById('reason').value = '';
+                document.getElementById('paymentMethod').value = 'In-game Items';
+
+                // Send Discord webhook alert
+                if (PRESET_DISCORD_WEBHOOK_URL && PRESET_DISCORD_WEBHOOK_URL !== "YOUR_DISCORD_WEBHOOK_URL_HERE") {
+                    await sendDiscordWebhookAlert(newBounty);
+                } else {
+                    console.warn("Preset Discord Webhook URL is not configured. Skipping alert.");
+                    // showMessage("Warning: Preset Discord Webhook URL is not configured. Alerts will not be sent.", "error");
+                }
+            } catch (error) {
+                console.error("Error adding bounty:", error);
+                showMessage(`Failed to add bounty: ${error.message}`, "error");
+            }
+        }
+
+        // Send Discord Webhook Alert
+        async function sendDiscordWebhookAlert(bounty) {
+            const webhookPayload = {
+                content: `🚨 **NEW BOUNTY ALERT!** 🚨`,
+                embeds: [
+                    {
+                        title: `Bounty on ${bounty.targetPlayer}`,
+                        description: `**Amount:** ${bounty.amount}\n**Reason:** ${bounty.reason}\n**Payment Method:** ${bounty.paymentMethod}`,
+                        color: 16711680, // Red color
+                        fields: [
+                            {
+                                name: "Created By",
+                                value: bounty.createdByEmail + (bounty.createdByDiscordId && bounty.createdByDiscordId !== 'N/A' ? ` (Discord ID: ${bounty.createdByDiscordId})` : ''),
+                                inline: true
+                            },
+                            {
+                                name: "Status",
+                                value: bounty.status,
+                                inline: true
+                            }
+                        ],
+                        timestamp: new Date().toISOString(),
+                        footer: {
+                            text: "Johnny3x Rust Bounty System"
+                        }
+                    }
+                ]
+            };
+
+            try {
+                const response = await fetch(PRESET_DISCORD_WEBHOOK_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(webhookPayload),
+                });
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error("Discord webhook failed:", response.status, errorText);
+                    showMessage(`Failed to send Discord alert: ${response.status} - ${errorText}`, "error");
+                } else {
+                    console.log("Discord webhook alert sent successfully!");
+                }
+            } catch (error) {
+                console.error("Error sending Discord webhook:", error);
+                showMessage(`Error sending Discord alert: ${error.message}`, "error");
+            }
+        }
+
+        // Claim a bounty
+        async function handleClaimBounty(bountyId, bountyCreatorUid) {
+            if (!firebaseUid) { // User must be authenticated
+                showMessage("Please log in first.", "error");
+                return;
+            }
+            // Allow creator or admin to claim
+            if (!isAdmin && firebaseUid !== bountyCreatorUid) {
+                showMessage("You can only claim bounties that you have created (or be an admin).", "error");
+                return;
+            }
+
+            try {
+                const bountyRef = ref(db, `artifacts/${appId}/public/data/bounties/${bountyId}`);
+                await update(bountyRef, {
+                    status: 'claimed',
+                    claimedByUid: firebaseUid,
+                    claimedByEmail: auth.currentUser?.email || 'N/A',
+                    claimedByDiscordId: userDiscordId || 'N/A',
+                    claimedAt: new Date().toISOString(),
+                });
+                showMessage("Bounty claimed successfully!", "success");
+            } catch (error) {
+                console.error("Error claiming bounty:", error);
+                showMessage(`Failed to claim bounty: ${error.message}`, "error");
+            }
+        }
+
+        // Handle Edit Bounty
+        function handleEditClick(bounty) {
+            if (firebaseUid !== bounty.createdByUid) {
+                showMessage("You can only edit bounties that you have created.", "error");
+                return;
+            }
+            currentBountyToEdit = bounty;
+            document.getElementById('editBountyId').value = bounty.id;
+            document.getElementById('editTargetPlayer').value = bounty.targetPlayer;
+            document.getElementById('editAmount').value = bounty.amount;
+            document.getElementById('editReason').value = bounty.reason;
+            document.getElementById('editPaymentMethod').value = bounty.paymentMethod;
+            showModal('edit-bounty-modal');
+        }
+
+        async function handleUpdateBounty(e) {
+            e.preventDefault();
+            if (!currentBountyToEdit || !firebaseUid) {
+                showMessage("Error: Not authorized or bounty not selected.", "error");
+                return;
+            }
+            if (firebaseUid !== currentBountyToEdit.createdByUid) {
+                showMessage("You can only edit bounties that you have created.", "error");
+                hideModal('edit-bounty-modal');
+                return;
+            }
+
+            const editedBountyId = document.getElementById('editBountyId').value;
+            const editedTargetPlayer = document.getElementById('editTargetPlayer').value.trim();
+            const editedAmount = parseFloat(document.getElementById('editAmount').value);
+            const editedReason = document.getElementById('editReason').value.trim();
+            const editedPaymentMethod = document.getElementById('editPaymentMethod').value;
+
+            if (!editedTargetPlayer || !editedAmount || !editedReason) {
+                showMessage("All fields are required to edit a bounty.", "error");
+                return;
+            }
+            if (isNaN(editedAmount) || editedAmount <= 0) {
+                showMessage("Amount must be a positive number.", "error");
+                return;
+            }
+
+            try {
+                const bountyRef = ref(db, `artifacts/${appId}/public/data/bounties/${editedBountyId}`);
+                await update(bountyRef, {
+                    targetPlayer: editedTargetPlayer,
+                    amount: editedAmount,
+                    reason: editedReason,
+                    paymentMethod: editedPaymentMethod,
+                    lastUpdatedAt: new Date().toISOString(),
+                    lastUpdatedBy: auth.currentUser?.email || userDiscordId || 'N/A',
+                });
+                showMessage("Bounty updated successfully!", "success");
+                hideModal('edit-bounty-modal');
+                currentBountyToEdit = null;
+            } catch (error) {
+                console.error("Error updating bounty:", error);
+                showMessage(`Failed to update bounty: ${error.message}`, "error");
+            }
+        }
+
+        // Handle Delete Bounty
+        async function handleDeleteClick(bountyId, bountyCreatorUid) {
+            if (!firebaseUid) { // User must be authenticated
+                showMessage("Please log in first.", "error");
+                return;
+            }
+            // Allow creator or admin to delete
+            if (!isAdmin && firebaseUid !== bountyCreatorUid) {
+                showMessage("You can only delete bounties that you have created (or be an admin).", "error");
+                return;
+            }
+
+            const bountyRefCheck = ref(db, `artifacts/${appId}/public/data/bounties/${bountyId}`);
+            const snapshot = await get(bountyRefCheck);
+            if (!snapshot.exists()) {
+                showMessage("Bounty not found.", "error");
+                return;
+            }
+            if (!isAdmin && snapshot.val().createdByUid !== firebaseUid) {
+                showMessage("You can only delete bounties that you have created (or be an admin).", "error");
+                return;
+            }
+
+            bountyToDeleteId = bountyId;
+            showModal('delete-confirm-modal');
+        }
+
+        async function handleConfirmDelete() {
+            if (!bountyToDeleteId || !firebaseUid) {
+                showMessage("Error: Not authorized or bounty not selected for deletion.", "error");
+                return;
+            }
+
+            try {
+                const bountyRef = ref(db, `artifacts/${appId}/public/data/bounties/${bountyToDeleteId}`);
+                await remove(bountyRef);
+                showMessage("Bounty deleted successfully!", "success");
+                hideModal('delete-confirm-modal');
+                bountyToDeleteId = null;
+            } catch (error) {
+                console.error("Error deleting bounty:", error);
+                showMessage(`Failed to delete bounty: ${error.message}`, "error");
+            }
+        }
+
+        // Handle Disable Bounty
+        function handleDisableClick(bountyId) {
+            if (!isAdmin) {
+                showMessage("Only admins can disable bounties.", "error");
+                return;
+            }
+            bountyToDisableId = bountyId;
+            document.getElementById('disableReasonInput').value = ''; // Clear reason input
+            showModal('disable-bounty-modal');
+        }
+
+        async function handleConfirmDisable() {
+            if (!bountyToDisableId || !isAdmin || !firebaseUid) {
+                showMessage("Error: Not authorized or bounty not selected for disablement.", "error");
+                return;
+            }
+            const disableReason = document.getElementById('disableReasonInput').value.trim();
+            if (!disableReason) {
+                showMessage("Please provide a reason for disabling the bounty.", "error");
+                return;
+            }
+
+            try {
+                const bountyRef = ref(db, `artifacts/${appId}/public/data/bounties/${bountyToDisableId}`);
+                await update(bountyRef, {
+                    status: 'disabled',
+                    disabled: true,
+                    disabledReason: disableReason,
+                    disabledBy: auth.currentUser?.email || userDiscordId || 'N/A', // Store who disabled it
+                    disabledAt: new Date().toISOString(),
+                });
+                showMessage("Bounty disabled successfully!", "success");
+                hideModal('disable-bounty-modal');
+                bountyToDisableId = null;
+            } catch (error) {
+                console.error("Error disabling bounty:", error);
+                showMessage(`Failed to disable bounty: ${error.message}`, "error");
+            }
+        }
+
+        // --- Event Listeners ---
+        document.addEventListener('DOMContentLoaded', () => {
+            // Initial loading state update
+            updateLoadingState();
+
+            // Initial setup for tabs
+            document.getElementById('active-bounties-tab')?.addEventListener('click', () => {
+                document.getElementById('active-bounties-list')?.classList.remove('hidden');
+                document.getElementById('completed-bounties-list')?.classList.add('hidden');
+                document.getElementById('active-bounties-tab')?.classList.replace('bg-gray-800', 'bg-red-700');
+                document.getElementById('active-bounties-tab')?.classList.replace('text-gray-300', 'text-white');
+                document.getElementById('completed-bounties-tab')?.classList.replace('bg-red-700', 'bg-gray-800');
+                document.getElementById('completed-bounties-tab')?.classList.replace('text-white', 'text-gray-300');
+            });
+
+            document.getElementById('completed-bounties-tab')?.addEventListener('click', () => {
+                document.getElementById('active-bounties-list')?.classList.add('hidden');
+                document.getElementById('completed-bounties-list')?.classList.remove('hidden');
+                document.getElementById('completed-bounties-tab')?.classList.replace('bg-gray-800', 'bg-red-700');
+                document.getElementById('completed-bounties-tab')?.classList.replace('text-gray-300', 'text-white');
+                document.getElementById('active-bounties-tab')?.classList.replace('bg-red-700', 'bg-gray-800');
+                document.getElementById('active-bounties-tab')?.classList.replace('text-white', 'text-gray-300');
+            });
+
+            // Login/Register Modal
+            document.getElementById('login-register-btn')?.addEventListener('click', handleLoginRegisterModal);
+            document.getElementById('cancel-auth-btn')?.addEventListener('click', () => hideModal('login-register-modal'));
+            document.getElementById('email-password-form')?.addEventListener('submit', handleEmailPasswordAuth);
+            document.getElementById('toggle-register-btn')?.addEventListener('click', toggleAuthMode);
+            document.getElementById('toggle-login-btn')?.addEventListener('click', toggleAuthMode);
+
+            // Admin Login Buttons
+            document.getElementById('admin-login-btn')?.addEventListener('click', handleAdminLogin);
+            document.getElementById('cancel-admin-login-btn')?.addEventListener('click', () => hideModal('admin-login-modal'));
+            document.getElementById('confirm-admin-login-btn')?.addEventListener('click', handleAdminLoginAttempt);
+
+            // Add Bounty Form
+            document.getElementById('add-bounty-form')?.addEventListener('submit', handleAddBounty);
+
+            // Search and Filter
+            document.getElementById('searchBounties')?.addEventListener('input', renderBounties);
+            document.getElementById('searchPaymentMethod')?.addEventListener('change', renderBounties);
+
+            // Edit Bounty Modal Buttons
+            document.getElementById('edit-bounty-form')?.addEventListener('submit', handleUpdateBounty);
+            document.getElementById('cancel-edit-bounty-btn')?.addEventListener('click', () => hideModal('edit-bounty-modal'));
+
+            // Delete Confirmation Modal Buttons
+            document.getElementById('cancel-delete-btn')?.addEventListener('click', () => hideModal('delete-confirm-modal'));
+            document.getElementById('confirm-delete-btn')?.addEventListener('click', handleConfirmDelete);
+
+            // Disable Bounty Modal Buttons
+            document.getElementById('cancel-disable-btn')?.addEventListener('click', () => hideModal('disable-bounty-modal'));
+            document.getElementById('confirm-disable-btn')?.addEventListener('click', handleConfirmDisable);
+        });
+    </script>
+</body>
+</html>
