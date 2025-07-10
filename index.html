@@ -85,6 +85,9 @@
                 ⚠️ WARNING: Failure to honor a bounty reward will result in a permanent blacklist from Johnny3x Rust
                 Bounty Site Services.
             </p>
+            <p>
+                ⚠️ Notice : After Posting , editing , Deleting A bounty Refresh The Page To See updated view.
+            </p>
         </div>
 
         <!-- Add New Bounty Form and Search/Filter (Conditional) -->
@@ -841,7 +844,7 @@
                 document.getElementById('paymentMethod').value = 'In-game Items';
 
                 // Send Discord webhook alert
-                if (PRESET_DISCORD_WEBHOOK_URL && PRESET_DISCORD_WEBHOOK_URL !== "YOUR_DISCORD_WEBHOOK_URL_HERE") {
+                if (PRESET_DISCORD_WEBHOOK_URL && PRESET_DISCORD_WEBHOOK_URL !== "https://discord.com/api/webhooks/1392503480412803152/JQoXoY7rT9FiTc5dIisfCtofWASmvblItwgxcFf5pQMpAS6KU7AdG5Vh8rO51xeZS3kg") {
                     await sendDiscordWebhookAlert(newBounty);
                 } else {
                     console.warn("Preset Discord Webhook URL is not configured. Skipping alert.");
@@ -856,7 +859,7 @@
         // Send Discord Webhook Alert
         async function sendDiscordWebhookAlert(bounty) {
             const webhookPayload = {
-                content: `🚨 **NEW BOUNTY ALERT!** �`,
+                content: `🚨 **NEW BOUNTY ALERT!** 🚨`,
                 embeds: [
                     {
                         title: `Bounty on ${bounty.targetPlayer}`,
