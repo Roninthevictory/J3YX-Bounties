@@ -52,6 +52,21 @@
         input[type=number] {
             -moz-appearance: textfield;
         }
+        /* Version Footer */
+        .version-footer {
+            position: fixed;
+            bottom: 16px;
+            left: 16px;
+            background: rgba(30, 41, 59, 0.85); /* Tailwind's slate-800 with opacity */
+            color: #f87171; /* Tailwind's red-400 */
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            font-size: 0.95rem;
+            font-family: 'Inter', sans-serif;
+            z-index: 9999;
+            box-shadow: 0 2px 8px 0 rgba(0,0,0,0.18);
+            pointer-events: none;
+        }
     </style>
 </head>
 <body class="min-h-screen p-6">
@@ -65,18 +80,63 @@
     </div>
 
     <main class="max-w-6xl mx-auto p-8 bg-gray-900 rounded-xl shadow-2xl border border-red-800">
+        <!-- Loading Indicator -->
         <div id="loading-indicator" class="text-center py-10">
             <div class="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-red-500 mx-auto mb-4"></div>
             <p class="text-gray-400 text-lg">Loading Bounties...</p>
         </div>
 
         <div id="main-content" class="hidden">
+
+            <!-- Warning Message (Disclaimer) -->
+            <section class="mb-8 p-4 bg-red-900 bg-opacity-30 border border-red-700 rounded-lg shadow-md text-center">
+                <p class="text-red-300 font-bold text-lg mb-2">
+                    ⚠️ WARNING: Failure to honor a bounty reward will result in a permanent blacklist from Johnny3x Rust
+                    Bounty Site Services.
+                </p>
+                <p class="text-red-300 text-sm">
+                    ⚠️ Notice: After Posting, editing, or Deleting a bounty, Refresh The Page To See updated view.
+                </p>
+            </section>
+
+            <!-- How It Works Section -->
+            <section class="mb-8 p-6 bg-gray-950 rounded-lg border border-red-700 shadow-inner">
+                <h2 class="text-2xl font-bold text-red-400 mb-4 text-center">How It Works</h2>
+                <div class="text-gray-300 space-y-3">
+                    <p>Welcome to the Johnny3x Rust Bounty System! Here's a quick guide on how to use it:</p>
+                    <ol class="list-decimal list-inside space-y-2 pl-4">
+                        <li>
+                            <p><strong class="text-red-300">Browse Bounties:</strong> Check the "Active Bounties" tab to see all bounties currently up for grabs. You can also use the search bar and filter to find specific bounties.</p>
+                        </li>
+                        <li>
+                            <p><strong class="text-red-300">Create an Account:</strong> To post or claim bounties, you'll need to log in or register. Click the "<span class="font-mono bg-gray-800 px-2 py-1 rounded">Login / Register</span>" button at the top to get started.</p>
+                        </li>
+                        <li>
+                            <p><strong class="text-red-300">Post a New Bounty:</strong> Once logged in, use the "Add New Bounty" section. Fill in who you're targeting, the reward **amount**, the **type of reward** (like USD, Scrap, or Johnny Coins), and why you're placing the bounty. This goes live immediately!</p>
+                        </li>
+                        <li>
+                            <p><strong class="text-red-300">Claim a Bounty:</strong> If you successfully take down a target with an active bounty, click the "<span class="font-mono bg-purple-700 px-2 py-1 rounded">Claim</span>" button on that bounty's card. This marks it as completed.</p>
+                        </li>
+                        <li>
+                            <p><strong class="text-red-300">Manage Your Bounties:</strong> If you created a bounty, you can "<span class="font-mono bg-blue-700 px-2 py-1 rounded">Edit</span>" or "<span class="font-mono bg-red-800 px-2 py-1 rounded">Delete</span>" it. Admins have additional controls, like "<span class="font-mono bg-orange-700 px-2 py-1 rounded">Disable</span>" for inappropriate bounties.</p>
+                        </li>
+                        <li>
+                            <p><strong class="text-red-300">View Activity:</strong> The "Activity Log" tab shows a timeline of all bounty creations, claims, and updates, keeping you informed about the latest happenings.</p>
+                        </li>
+                    </ol>
+                    <p class="mt-4 text-sm italic">Always communicate with bounty creators for payment details. Happy hunting!</p>
+                </div>
+            </section>
+
+            <!-- User Login Status -->
             <section class="mb-8 p-6 bg-gray-950 rounded-lg border border-red-700 shadow-inner">
                 <h2 class="text-2xl font-bold text-red-400 mb-4">Account Status</h2>
                 <div id="user-login-status" class="flex flex-col md:flex-row items-center justify-between">
-                    </div>
+                    <!-- Login/Logout status will be injected here by JS -->
+                </div>
             </section>
 
+            <!-- Add Bounty Form (Authenticated Section) -->
             <section id="authenticated-sections" class="hidden mb-10 p-8 bg-gray-950 rounded-lg border border-red-700 shadow-inner">
                 <h2 class="text-2xl font-bold text-red-400 mb-6 text-center">Add New Bounty</h2>
                 <form id="add-bounty-form" class="space-y-4">
@@ -133,9 +193,11 @@
                 </form>
             </section>
 
+            <!-- Bounty List and Search -->
             <section class="mb-10 p-8 bg-gray-950 rounded-lg border border-red-700 shadow-inner">
                 <h2 class="text-2xl font-bold text-red-400 mb-6 text-center">Current Bounties</h2>
 
+                <!-- Search and Filter -->
                 <div class="mb-6 flex flex-col md:flex-row items-center justify-between gap-4">
                     <input type="text" id="searchBounties" placeholder="Search bounties..."
                         class="w-full md:w-1/2 p-3 rounded-lg bg-gray-900 border border-red-700 text-white focus:ring-2 focus:ring-red-600">
@@ -148,6 +210,7 @@
                     </select>
                 </div>
 
+                <!-- Bounty Tabs -->
                 <div class="flex space-x-4 mb-6" id="bounties-tabs">
                     <button id="active-bounties-tab"
                         class="px-6 py-3 rounded-lg font-bold transition duration-300 ease-in-out bg-red-700 text-white">
@@ -163,26 +226,33 @@
                     </button>
                 </div>
 
+                <!-- Active Bounties List -->
                 <div id="active-bounties-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
                     <p id="no-active-bounties" class="text-gray-400 col-span-full text-center hidden">No active bounties found.</p>
                     <div id="active-bounties-container" class="col-span-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        </div>
+                        <!-- Active bounties will be rendered here -->
+                    </div>
                 </div>
 
+                <!-- Completed Bounties List -->
                 <div id="completed-bounties-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8 hidden">
                     <p id="no-completed-bounties" class="text-gray-400 col-span-full text-center hidden">No completed bounties found.</p>
                     <div id="completed-bounties-container" class="col-span-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        </div>
+                        <!-- Completed bounties will be rendered here -->
+                    </div>
                 </div>
 
+                <!-- Activity Log List -->
                 <div id="activity-log-list" class="hidden bg-gray-900 p-6 rounded-lg shadow-inner border border-red-700">
                     <h4 class="text-xl font-bold text-red-400 mb-4">Recent Activity</h4>
                     <div id="activity-log-container" class="space-y-4">
                         <p id="no-activity" class="text-gray-400 text-center hidden">No recent activity to display.</p>
-                        </div>
+                        <!-- Activity items will be rendered here -->
+                    </div>
                 </div>
             </section>
 
+            <!-- Admin Login (if needed) -->
             <section class="text-center mt-8">
                 <button id="admin-login-btn"
                     class="bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300 ease-in-out">
@@ -192,6 +262,12 @@
         </div>
     </main>
 
+    <!-- Version Footer -->
+    <div class="version-footer">
+        V0.0.1 (Under Development) (bugs May Occur) (Under Development Monitoring)
+    </div>
+
+    <!-- Auth Modal -->
     <div id="auth-modal" class="modal-backdrop hidden">
         <div class="modal-content">
             <h3 id="auth-modal-title" class="text-2xl font-bold text-red-400 mb-4 text-center">Login</h3>
@@ -227,6 +303,7 @@
         </div>
     </div>
 
+    <!-- Admin Login Modal -->
     <div id="admin-login-modal" class="modal-backdrop hidden">
         <div class="modal-content">
             <h3 class="text-2xl font-bold text-red-400 mb-4 text-center">Admin Login</h3>
@@ -240,8 +317,7 @@
             </div>
             <div class="mb-6">
                 <label for="adminPasswordInput" class="block text-gray-300 text-sm font-bold mb-2">
-                    Password:
-                </label>
+                    Password:</label>
                 <input type="password" id="adminPasswordInput"
                     class="w-full p-3 rounded-lg bg-gray-950 border border-red-700 text-white focus:ring-2 focus:ring-red-600"
                     required />
@@ -259,6 +335,7 @@
         </div>
     </div>
 
+    <!-- Edit Bounty Modal -->
     <div id="edit-bounty-modal" class="modal-backdrop hidden">
         <div class="modal-content">
             <h3 class="text-2xl font-bold text-red-400 mb-4 text-center">Edit Bounty</h3>
@@ -322,6 +399,7 @@
         </div>
     </div>
 
+    <!-- Delete Confirmation Modal -->
     <div id="delete-confirm-modal" class="modal-backdrop hidden">
         <div class="modal-content">
             <h3 class="text-2xl font-bold text-red-400 mb-4 text-center">Confirm Deletion</h3>
@@ -341,6 +419,7 @@
         </div>
     </div>
 
+    <!-- Disable Bounty Modal -->
     <div id="disable-bounty-modal" class="modal-backdrop hidden">
         <div class="modal-content">
             <h3 class="text-2xl font-bold text-red-400 mb-4 text-center">Disable Bounty</h3>
@@ -364,6 +443,7 @@
         </div>
     </div>
 
+    <!-- Firebase SDKs -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getDatabase, ref, push, set, update, remove, onValue, off, get, child } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-database.js";
@@ -641,7 +721,8 @@
                     </p>
                 ` : ''}
                 <div class="mt-4 flex justify-end gap-2 bounty-actions">
-                    </div>
+                    <!-- Buttons will be added here by JS -->
+                </div>
             `;
 
             const actionsDiv = card.querySelector('.bounty-actions');
