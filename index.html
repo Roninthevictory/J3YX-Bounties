@@ -2,113 +2,196 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Goodbye, Hacker</title>
+  <title>Contact Us</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
-    body {
-      background: black;
-      color: #00ff99;
-      font-family: 'Courier New', monospace;
+    html, body {
       margin: 0;
+      padding: 0;
+      background: black;
       overflow: hidden;
+      height: 100%;
+      user-select: none;
     }
 
-    .glitch {
-      font-size: 2em;
-      white-space: pre-wrap;
+    #startBtn {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 1.2em;
+      padding: 15px 30px;
+      background: #00ff99;
+      color: black;
+      border: none;
+      border-radius: 8px;
+      font-family: 'Courier New', monospace;
+      cursor: pointer;
+      z-index: 10000;
+      transition: background 0.3s;
+    }
+
+    #startBtn:hover {
+      background: #00cc77;
+    }
+
+    .error-window {
+      position: absolute;
+      width: 300px;
+      height: 150px;
+      background: #111;
+      border: 2px solid #ff0033;
+      box-shadow: 0 0 10px #ff0033;
+      color: #ff0033;
+      font-family: monospace;
+      padding: 10px;
+      z-index: 9999;
       animation: glitch 1s infinite;
-      text-align: center;
-      margin-top: 20vh;
     }
 
     @keyframes glitch {
-      0% { text-shadow: 2px 2px red, -2px -2px blue; }
-      20% { text-shadow: -2px -2px red, 2px 2px blue; }
-      40% { text-shadow: 2px -2px red, -2px 2px blue; }
-      60% { text-shadow: -2px 2px red, 2px -2px blue; }
-      80% { text-shadow: 2px 2px red, -2px -2px blue; }
-      100% { text-shadow: none; }
+      0% { transform: translate(0, 0); }
+      20% { transform: translate(-2px, 2px); }
+      40% { transform: translate(2px, -2px); }
+      60% { transform: translate(-2px, -2px); }
+      80% { transform: translate(2px, 2px); }
+      100% { transform: translate(0, 0); }
     }
 
-    .overlay {
+    .overlay-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-family: 'Courier New', monospace;
+      font-size: 1.5em;
+      color: #00ff99;
+      text-align: center;
+      opacity: 0;
+      animation: fadeIn 2s ease-in forwards;
+    }
+
+    @keyframes fadeIn {
+      0% { opacity: 0; }
+      100% { opacity: 1; }
+    }
+
+    .info-modal {
       position: fixed;
-      top: 0;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: #000;
+      border: 2px solid #0f0;
+      color: #0f0;
+      padding: 20px;
+      font-family: monospace;
+      font-size: 1em;
+      z-index: 999999;
+      box-shadow: 0 0 20px #0f0;
+      animation: fadeIn 1s ease forwards;
+    }
+
+    .fake-cmd {
+      position: fixed;
+      bottom: 0;
       left: 0;
-      width: 100vw;
-      height: 100vh;
-      background: repeating-linear-gradient(
-        0deg,
-        rgba(255,0,0,0.1),
-        rgba(255,0,0,0.1) 1px,
-        transparent 1px,
-        transparent 2px
-      );
-      animation: flicker 0.15s infinite;
-      pointer-events: none;
-      z-index: 99;
-    }
-
-    @keyframes flicker {
-      0% { opacity: 0.1; }
-      50% { opacity: 0.3; }
-      100% { opacity: 0.1; }
-    }
-
-    .typewriter {
-      overflow: hidden;
-      border-right: .15em solid #00ff99;
-      white-space: nowrap;
-      margin: 0 auto;
-      letter-spacing: .1em;
-      animation:
-        typing 4s steps(40, end),
-        blink-caret .75s step-end infinite;
-    }
-
-    @keyframes typing {
-      from { width: 0 }
-      to { width: 100% }
-    }
-
-    @keyframes blink-caret {
-      from, to { border-color: transparent }
-      50% { border-color: #00ff99; }
-    }
-
-    .container {
-      max-width: 90%;
-      margin: auto;
-    }
-
-    .ip-fake {
-      color: red;
-      font-weight: bold;
-      font-size: 1.2em;
-      margin-top: 20px;
-      animation: glitch 1s infinite;
+      width: 100%;
+      height: 40vh;
+      background: #000;
+      color: #0f0;
+      font-family: monospace;
+      font-size: 0.9em;
+      padding: 10px;
+      overflow-y: auto;
+      border-top: 2px solid #0f0;
+      z-index: 99999;
     }
   </style>
 </head>
 <body>
-  <div class="overlay"></div>
 
-  <div class="container">
-    <div class="glitch typewriter">
-      Oh... sorry, f**ktard. This page was taken down.<br>
-      Have a nice day 😘
-    </div>
+  <button id="startBtn">📞 Click here to contact us</button>
 
-    <div class="ip-fake">
-      Thanks for your IP. It's been logged 😉
-    </div>
-  </div>
+  <div class="overlay-text">Initializing system…</div>
+  <div id="fakeCmdBox" class="fake-cmd" style="display:none;"></div>
 
   <script>
-    console.log("👀 Still here? Your 'IP' totally got 'logged' lol...");
-    setTimeout(() => {
-      const audio = new Audio("https://www.soundjay.com/button/beep-07.wav");
-      audio.play();
-    }, 1000);
+    const startBtn = document.getElementById("startBtn");
+
+    startBtn.addEventListener("click", () => {
+      enterFullscreen();
+      startBtn.remove();
+
+      setTimeout(() => {
+        document.querySelector('.overlay-text').remove();
+        spamErrors();
+        setTimeout(showInfoModal, 2000);
+        setTimeout(startFakeCMD, 3500);
+      }, 3000);
+    });
+
+    function enterFullscreen() {
+      const el = document.documentElement;
+      if (el.requestFullscreen) el.requestFullscreen();
+      else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+      else if (el.msRequestFullscreen) el.msRequestFullscreen();
+    }
+
+    function spamErrors() {
+      const msg = "💀 Oh... sorry f**ktard.\nThis page is gone.\nHave a nice day 😘\nSystem override initiated.";
+      const interval = setInterval(() => {
+        const err = document.createElement('div');
+        err.className = 'error-window';
+        err.innerText = msg;
+
+        err.style.left = Math.random() * (window.innerWidth - 300) + 'px';
+        err.style.top = Math.random() * (window.innerHeight - 150) + 'px';
+
+        document.body.appendChild(err);
+
+        if (document.querySelectorAll('.error-window').length > 60) {
+          clearInterval(interval);
+        }
+      }, 200);
+    }
+
+    function showInfoModal() {
+      const modal = document.createElement("div");
+      modal.className = "info-modal";
+      modal.innerText = "⚠️ Unauthorized access detected.\nSecurity measures active.\nMonitoring engaged.";
+      document.body.appendChild(modal);
+    }
+
+    function startFakeCMD() {
+      const box = document.getElementById("fakeCmdBox");
+      box.style.display = "block";
+
+      const lines = [
+        "System scan initialized...",
+        "Analyzing network interfaces...",
+        "Deploying stealth process monitor...",
+        "Bypassing local sandbox...",
+        "Injecting silent audit tools...",
+        "Checking virtual environment status...",
+        "Synchronizing trace logs...",
+        "Uploading telemetry to control server...",
+        "✅ Sequence completed successfully.",
+        "Disconnecting from remote..."
+      ];
+
+      let i = 0;
+      const interval = setInterval(() => {
+        if (i >= lines.length) {
+          clearInterval(interval);
+          return;
+        }
+        box.innerHTML += lines[i] + "<br/>";
+        box.scrollTop = box.scrollHeight;
+        i++;
+      }, 300);
+    }
   </script>
+
 </body>
 </html>
